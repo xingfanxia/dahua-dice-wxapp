@@ -94,9 +94,27 @@ components/      # 从 web 版移植 (div→View/Text, className 保留 tailwind
 ```
 
 - **入房即玩的分享流**：`onShareAppMessage` → `path: 'pages/room/index?code=XXXX'`，卡片 title "来玩大话骰 · 房间XXXX 等你"，imageUrl 5:4 主题图。接收方（体验成员）点卡片 → `onLoad` 拿 code → 自动 join。**这是本项目存在的理由，最高优先级打磨。**
+- **首次进房 journey（卡片直达，绕过首页）**：room 页 onLoad 时本地无昵称 → 底部半屏 sheet（昵称填写 + 官方头像选择 + 单按钮"进入房间"），填完即 join —— 不弹回首页（断链会杀死分享流的全部价值）。昵称/头像存 storage，二次进房静默 join。
+- **非体验成员点卡片**：微信在小程序启动前就拦截（"无权限"系统页），**我们的 UI 永远没机会渲染** —— 这不是 bug，是体验版分发模型的边界。对策全在运维侧：先加人再拉群（成员 SOP 写进 README），群公告挂永久体验版码方便新人申请体验。
+- **join 失败三态**（room 页全屏态，非 toast——用户是点卡片来的，没有"原页面"可退）：① 房间不存在/已过期（cleanup 后）→ "房间已散场" + 主按钮"创建新房间"；② 房间已满 → "房间满员（6/6）" + "创建新房间"；③ 游戏已开始且非本局成员 → "本局已开打" + 房间内实时战况只读预览（lobby 数据本就在 room doc）+ "等下一局"提示（rematch 时自动可加入）。三态都保留房间码展示，方便口头对码。
 - **动态消息**（v1.1 可选）：分享卡片实时显示"X/Y 人已加入"。
 - 群识别（shareTicket + getGroupEnterInfo）：v1 不做，记录能力备用（同群战绩等）。
+- **出局观战态**（web 版血泪教训直接继承）：alive=false 的玩家停止读 hands（出局者无手牌，别让客户端空轮询）、中心区换 💀"你已出局 · 观战中"横幅、保留全部实时战况；game_end 时与活人同屏看结算 + rematch 自动满血回归。
 - 摇骰子：`wx.onDeviceMotionChange`（无权限弹窗）+ `wx.vibrateShort`。
+
+### 5.5 交互状态表（每格 = 用户所见，非后端行为）
+
+| 界面/功能 | LOADING | EMPTY | ERROR | SUCCESS | 备注 |
+|---|---|---|---|---|---|
+| 首页 | skeleton 房间码输入框 | 昵称未填 → 按钮置灰 + placeholder 引导 | create 云函数失败 → toast + 按钮恢复 | 跳 room 页 | |
+| room 进房 | 全屏主题色 spinner + "正在进入房间 XXXX" | — | join 三态全屏页（见上） | 落座大厅 | 卡片直达首次 → 先昵称 sheet |
+| 大厅 | — | 只有自己 → "把房间分享到群里"主按钮（分享即空态的 primary action） | start 失败 toast + 自动 resync | 全员列表 + 房主见"开始"、非房主见"等待房主开始…"（web 版教训） | |
+| 叫骰 | 提交中按钮 spinner + 防双击 | — | 409 → 静默 resync 后 toast "桌面有变，请再看一眼" | 出价入 bidChain，回合推进 | `key={round}` 防跨轮残留（web 版教训） |
+| 开/劈/通杀 | 确认弹层（防误触，继承 web 版） | — | 同 409 处理 | RevealStage 全员手牌揭晓 | |
+| 出局 | — | — | — | 💀 观战横幅（见上） | |
+| 断线 | — | — | staleness >10s → 顶部横幅"同步中断，重连中…"；>30s → 全屏遮罩 + "重新进入"按钮 | 横幅自动消失 | 由数据新鲜度驱动，非 watch 连接状态（铁律 6） |
+| game_end | — | — | rematch 失败 toast | 结算榜 + "再来一局"/"离开房间" | 离开≠解散（web 版文案教训） |
+- 移动端硬规格：safe-area 适配（`env(safe-area-inset-*)`，刘海/底部条机型）；触控目标 ≥44px、确认弹层防误触、`prefers-reduced-motion` 静态骰子 —— 全部继承 web 版 a11y 已有决策，不降级。
 - 音频：v1 砍掉（web 版本来默认关）。i18n：zh-CN 硬编码，文案直接抄 `messages/zh-CN.json`。
 - solo 模式：v2 再说（web 版 /solo 已覆盖该场景）。
 
