@@ -34,7 +34,7 @@ export function normalizeAvatarUrl(input: unknown): string {
 }
 
 export const gameRulesSchema = z.object({
-  diceCount: z.union([z.literal(3), z.literal(4), z.literal(5), z.literal(6), z.literal(7)]),
+  diceCount: z.union([z.literal(3), z.literal(4), z.literal(5), z.literal(6), z.literal(7), z.literal(8), z.literal(9), z.literal(10)]),
   aceWild: z.boolean(),
   allowZhai: z.boolean(),
   startingBidFactor: z.number().min(1).max(3),

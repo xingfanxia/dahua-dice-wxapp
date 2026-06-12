@@ -15044,7 +15044,7 @@ function normalizeAvatarUrl(input) {
   return s;
 }
 var gameRulesSchema = external_exports.object({
-  diceCount: external_exports.union([external_exports.literal(3), external_exports.literal(4), external_exports.literal(5), external_exports.literal(6), external_exports.literal(7)]),
+  diceCount: external_exports.union([external_exports.literal(3), external_exports.literal(4), external_exports.literal(5), external_exports.literal(6), external_exports.literal(7), external_exports.literal(8), external_exports.literal(9), external_exports.literal(10)]),
   aceWild: external_exports.boolean(),
   allowZhai: external_exports.boolean(),
   startingBidFactor: external_exports.number().min(1).max(3),
