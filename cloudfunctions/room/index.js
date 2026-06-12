@@ -104,6 +104,38 @@ function wxRoomDb(db2) {
     },
     async setStats(openid, doc) {
       await withEnsure("stats", () => stats.doc(openid).set({ data: doc }));
+    },
+    async getCleanupMark() {
+      var _a3;
+      try {
+        const res = await rooms.doc("__cleanup__").get();
+        return ((_a3 = res.data) == null ? void 0 : _a3.lastRunAt) ?? 0;
+      } catch (err) {
+        if (isNotFound(err) || isCollectionMissing(err)) return 0;
+        throw err;
+      }
+    },
+    async claimCleanupMark(expected, ts) {
+      var _a3;
+      if (expected === 0) {
+        try {
+          await withEnsure(
+            "rooms",
+            () => rooms.add({ data: { _id: "__cleanup__", lastRunAt: ts, updatedAt: ts } })
+          );
+          return true;
+        } catch (err) {
+          if (!isDuplicate(err)) throw err;
+        }
+      }
+      const res = await rooms.where({ _id: "__cleanup__", lastRunAt: expected }).update({ data: { lastRunAt: _.set(ts), updatedAt: _.set(ts) } });
+      return (((_a3 = res.stats) == null ? void 0 : _a3.updated) ?? 0) > 0;
+    },
+    async removeExpired(cutoff) {
+      var _a3, _b;
+      const r1 = await rooms.where({ updatedAt: _.lt(cutoff) }).remove().catch(() => null);
+      const r2 = await hands.where({ updatedAt: _.lt(cutoff) }).remove().catch(() => null);
+      return { rooms: ((_a3 = r1 == null ? void 0 : r1.stats) == null ? void 0 : _a3.removed) ?? 0, hands: ((_b = r2 == null ? void 0 : r2.stats) == null ? void 0 : _b.removed) ?? 0 };
     }
   };
 }
@@ -122,6 +154,18 @@ function isNotFound(err) {
 function isDuplicate(err) {
   const c = errCode(err);
   return c.includes("-502001") || c.toUpperCase().includes("DUPLICATE") || c.includes("already exists");
+}
+
+// cloud-src/room/cleanup.ts
+var THROTTLE_MS = 6 * 60 * 60 * 1e3;
+var MAX_AGE_MS = 24 * 60 * 60 * 1e3;
+async function cleanup(db2) {
+  const now2 = Date.now();
+  const last = await db2.getCleanupMark();
+  if (now2 - last < THROTTLE_MS) return { ok: true, ran: false };
+  if (!await db2.claimCleanupMark(last, now2)) return { ok: true, ran: false };
+  const removed = await db2.removeExpired(now2 - MAX_AGE_MS);
+  return { ok: true, ran: true, removed };
 }
 
 // engine/round.ts
@@ -15486,6 +15530,8 @@ async function dispatch(db2, openid, event) {
     }
     case "stats":
       return getStats(db2, openid);
+    case "cleanup":
+      return cleanup(db2);
     default:
       return { ok: false, reason: `unknown op: ${String(op)}` };
   }

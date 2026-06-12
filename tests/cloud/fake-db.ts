@@ -12,6 +12,7 @@ export type FakeRoomDb = RoomDb & {
   rooms: Map<string, RoomDoc>;
   hands: Map<string, HandDoc>;
   stats: Map<string, StatsDoc>;
+  cleanupMark: { lastRunAt: number };
   /** 测试用：直接覆写某房间的手牌为确定值 */
   forceHands(code: string, round: number, hands: Hands): void;
   /** 测试用：直接修改房间文档 */
@@ -22,11 +23,13 @@ export function fakeRoomDb(): FakeRoomDb {
   const rooms = new Map<string, RoomDoc>();
   const hands = new Map<string, HandDoc>();
   const stats = new Map<string, StatsDoc>();
+  const cleanupMark = { lastRunAt: 0 };
 
   return {
     rooms,
     hands,
     stats,
+    cleanupMark,
     forceHands(code, round, handsMap) {
       for (const key of [...hands.keys()]) {
         if (hands.get(key)?.roomCode === code) hands.delete(key);
@@ -89,6 +92,31 @@ export function fakeRoomDb(): FakeRoomDb {
     },
     async setStats(openid, doc) {
       stats.set(openid, clone(doc));
+    },
+    async getCleanupMark() {
+      return cleanupMark.lastRunAt;
+    },
+    async claimCleanupMark(expected, ts) {
+      if (cleanupMark.lastRunAt !== expected) return false;
+      cleanupMark.lastRunAt = ts;
+      return true;
+    },
+    async removeExpired(cutoff) {
+      let r = 0;
+      let h = 0;
+      for (const [k, v] of [...rooms]) {
+        if ((v.updatedAt ?? 0) < cutoff) {
+          rooms.delete(k);
+          r += 1;
+        }
+      }
+      for (const [k, v] of [...hands]) {
+        if ((v.updatedAt ?? 0) < cutoff) {
+          hands.delete(k);
+          h += 1;
+        }
+      }
+      return { rooms: r, hands: h };
     },
   };
 }

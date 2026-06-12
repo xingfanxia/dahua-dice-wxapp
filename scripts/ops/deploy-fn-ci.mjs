@@ -17,7 +17,8 @@ if (!existsSync(KEY)) {
   process.exit(1)
 }
 
-const names = process.argv.slice(2).length ? process.argv.slice(2) : ['room', 'cleanup', 'qrcode']
+// cleanup 已折叠进 room（op:cleanup 自节流）；qrcode 仍需 IDE 首次创建后才能 ci 更新
+const names = process.argv.slice(2).length ? process.argv.slice(2) : ['room']
 const project = new ci.Project({
   appid: APPID,
   type: 'miniProgram',

@@ -363,3 +363,20 @@ describe('review 回归（H1/H2/M5）', () => {
     expect(state.state.players[1].avatar).toBe('cloud://env.bucket/avatars/a.png');
   });
 });
+
+describe('cleanup op（自节流 TTL 替代）', () => {
+  it('首跑清过期房，6h 内重复调不再跑', async () => {
+    const { db, code } = await createJoined();
+    // 人为做一个过期房（updatedAt 25h 前）
+    db.forceRoom(code, (doc) => {
+      doc.updatedAt = Date.now() - 25 * 3600 * 1000;
+    });
+    const first = (await dispatch(db, P1, { op: 'cleanup' })) as R;
+    expect(first.ran).toBe(true);
+    expect(first.removed.rooms).toBe(1);
+    expect(((await dispatch(db, P1, { op: 'get', code })) as R).reason).toBe('no_room');
+
+    const second = (await dispatch(db, P1, { op: 'cleanup' })) as R;
+    expect(second.ran).toBe(false); // 节流
+  });
+});

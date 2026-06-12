@@ -1,5 +1,5 @@
 export default defineAppConfig({
-  pages: ['pages/index/index', 'pages/room/index'],
+  pages: ['pages/index/index', 'pages/room/index', 'pages/solo/index'],
   darkmode: true,
   themeLocation: 'theme.json',
   window: {

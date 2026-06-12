@@ -99,7 +99,8 @@
 
 ## 明确砍掉（记录在案，避免未来 agent 误捡）
 
-- 音频系统（BGM/全套 SFX；web 版默认关）——**例外：摇骰子单音效保留**（资产 `assets/audio/`，WXAPP-4 接线）、英文 i18n、solo 模式（web 版已有）、rate-limit（体验版 31 人无滥用面）、session 集合（openid 即身份）、群识别 getGroupEnterInfo（备用）
+- 音频系统（BGM/全套 SFX；web 版默认关）——**例外：摇骰子单音效保留**（资产 `assets/audio/`，WXAPP-4 接线）、英文 i18n、rate-limit（体验版 31 人无滥用面）、session 集合（openid 即身份）、群识别 getGroupEnterInfo（备用）
+- ~~solo 模式~~ **已恢复（2026-06-12，AX"功能都 match"指示）**：`pages/solo` 线下骰盅（本地 roll + 摇一摇 + 盖牌），零云依赖
 
 ## 跨阶段纪律
 

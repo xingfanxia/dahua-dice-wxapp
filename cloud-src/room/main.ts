@@ -1,8 +1,9 @@
 /**
  * room 云函数入口 —— 唯一写入口（铁律 7）。
- * event = { op: 'create'|'get'|'hand'|'act'|'stats'|'echo'|'init', ... }
+ * event = { op: 'create'|'get'|'hand'|'act'|'stats'|'cleanup'|'echo'|'init', ... }
  * 身份一律取 getWXContext().OPENID，永不信客户端送的 id。
  */
+import { cleanup } from './cleanup';
 import type { RoomDb } from './db';
 import { act, createRoom, getMyHand, getRoom } from './rooms';
 import { actionSchema } from './schemas';
@@ -27,6 +28,9 @@ export async function dispatch(db: RoomDb, openid: string, event: any): Promise<
     }
     case 'stats':
       return getStats(db, openid);
+    case 'cleanup':
+      // 自节流（≥6h 才真跑）；客户端首页 onShow 顺手调，替代定时触发器（ci 无法创建新函数）
+      return cleanup(db);
     default:
       return { ok: false, reason: `unknown op: ${String(op)}` };
   }

@@ -52,6 +52,12 @@ export interface RoomDb {
   getStats(openid: string): Promise<StatsDoc | null>;
   /** 读-改-写 upsert（战绩按 openid 单写者，无并发面） */
   setStats(openid: string, doc: StatsDoc): Promise<void>;
+  /** cleanup 哨兵（rooms 集合 _id='__cleanup__'）：lastRunAt，不存在为 0 */
+  getCleanupMark(): Promise<number>;
+  /** CAS 抢哨兵：lastRunAt 仍为 expected 时更新为 now，抢到返回 true */
+  claimCleanupMark(expected: number, now: number): Promise<boolean>;
+  /** 删除 updatedAt < cutoff 的 rooms/hands（哨兵文档除外） */
+  removeExpired(cutoff: number): Promise<{ rooms: number; hands: number }>;
 }
 
 const now = () => Date.now();
@@ -160,6 +166,38 @@ export function wxRoomDb(db: any): RoomDb {
     },
     async setStats(openid, doc) {
       await withEnsure('stats', () => stats.doc(openid).set({ data: doc }));
+    },
+    async getCleanupMark() {
+      try {
+        const res = await rooms.doc('__cleanup__').get();
+        return res.data?.lastRunAt ?? 0;
+      } catch (err: unknown) {
+        if (isNotFound(err) || isCollectionMissing(err)) return 0;
+        throw err;
+      }
+    },
+    async claimCleanupMark(expected, ts) {
+      if (expected === 0) {
+        try {
+          await withEnsure('rooms', () =>
+            rooms.add({ data: { _id: '__cleanup__', lastRunAt: ts, updatedAt: ts } }),
+          );
+          return true;
+        } catch (err: unknown) {
+          if (!isDuplicate(err)) throw err;
+          // 哨兵已存在但 lastRunAt 仍是 0（并发首跑）→ 退回 CAS
+        }
+      }
+      const res = await rooms
+        .where({ _id: '__cleanup__', lastRunAt: expected })
+        .update({ data: { lastRunAt: _.set(ts), updatedAt: _.set(ts) } });
+      return (res.stats?.updated ?? 0) > 0;
+    },
+    async removeExpired(cutoff) {
+      // 哨兵自身 claim 时刚刷过 updatedAt，天然不会被删
+      const r1 = await rooms.where({ updatedAt: _.lt(cutoff) }).remove().catch(() => null);
+      const r2 = await hands.where({ updatedAt: _.lt(cutoff) }).remove().catch(() => null);
+      return { rooms: r1?.stats?.removed ?? 0, hands: r2?.stats?.removed ?? 0 };
     },
   };
 }

@@ -7,7 +7,7 @@ import Taro, { useDidShow } from '@tarojs/taro'
 import { useState } from 'react'
 import { AvatarBadge } from '@/components/game/AvatarBadge'
 import { useThemeMode } from '@/hooks/useThemeMode'
-import { createRoom, fetchStats, reasonText } from '@/lib/actions'
+import { callRoom, createRoom, fetchStats, reasonText } from '@/lib/actions'
 import { getProfile, setProfile, uploadAvatar } from '@/lib/profile'
 
 type Stats = { gamesPlayed: number; wins: number; challengesWon: number; challengesLost: number }
@@ -25,6 +25,8 @@ export default function Index() {
     fetchStats().then((r) => {
       if (r.ok && r.stats) setStats(r.stats as Stats)
     })
+    // 过期房间清理：服务端自节流 ≥6h 真跑一次（替代定时触发器），失败无感
+    void callRoom({ op: 'cleanup' })
   })
 
   function saveProfile(n: string, a: string) {
@@ -143,6 +145,12 @@ export default function Index() {
             </View>
           </View>
           {!!error && <Text className='block text-center text-sm text-red-500'>{error}</Text>}
+          <View
+            className='py-1 text-center'
+            onClick={() => Taro.navigateTo({ url: '/pages/solo/index' })}
+          >
+            <Text className='text-sm text-gray-400 underline'>线下 / 单机骰盅 →</Text>
+          </View>
         </View>
 
         {/* 我的战绩（openid 维度，stats 集合） */}

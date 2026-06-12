@@ -66,6 +66,7 @@ cloudfunctions/
 src/
 ├─ pages/index/    # 首页：昵称头像 + 创建/加入
 ├─ pages/room/     # lobby + game（phase 驱动，对应 web 版 RoomClient）
+├─ pages/solo/     # 线下骰盅（本地 roll + 摇一摇，无网可玩）
 ├─ components/     # dice/ game/（结构从 web 版移植，视觉按 §5.1 简洁原则重做）
 └─ hooks/          # useRoomSync（watch+poll 双通道）
 assets/
