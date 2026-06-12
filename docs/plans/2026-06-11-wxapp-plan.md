@@ -38,7 +38,7 @@
 > ⚠ **部署发现（2026-06-12）**：微信侧创建的环境，开发者工具 CLI `cloud functions deploy`/`inc-deploy` 一律报 `ResourceNotFound.Namespace`（IDE 图形右键部署正常 —— 两者走不同内部 API）。tcb CLI 也管不了微信侧环境的云函数。**自动化部署唯一可行路 = miniprogram-ci 密钥**（本来就是 WXAPP-7 的前置）。
 >
 > **积压的人肉步骤（一次做完，全自动化从此解锁）**：
-> 1. mp 后台 → 开发管理 → 开发设置 → 生成「小程序代码上传密钥」，密钥文件存 `~/.secrets/wxapp-ci-key/private.wx20a31f84ad3fc6fb.key`（勿入 repo）；IP 白名单建议关闭（家用 IP 会变）
+> 1. mp 后台 → 开发管理 → 开发设置 → 生成「小程序代码上传密钥」，密钥文件存 `~/.secrets/wechat-miniprogram-ci/naoma-dahua-dice/private.wx20a31f84ad3fc6fb.key`（勿入 repo）；IP 白名单建议关闭（家用 IP 会变）
 > 2. IDE 里右键 `cloudfunctions/room` →「上传并部署:云端安装依赖」（更新到 WXAPP-2 新代码）；同样右键部署 `cloudfunctions/cleanup`（新函数 + 定时触发器要在 IDE 上传触发器）
 > 3. 部署后在 IDE 云开发控制台数据库建集合 `rooms`/`hands`/`stats`（或模拟器里调一次 `{op:'init'}`），并给三个集合贴安全规则（JSON 见设计 §3 末尾）
 

@@ -1,6 +1,6 @@
 // 体验版上传（WXAPP-7）：miniprogram-ci，密钥就绪后即全自动。
 // 前置（一次性人肉）：mp 后台 → 开发设置 → 生成「小程序代码上传密钥」，存
-//   ~/.secrets/wxapp-ci-key/private.wx20a31f84ad3fc6fb.key（勿入 repo）；IP 白名单建议关闭。
+//   ~/.secrets/wechat-miniprogram-ci/naoma-dahua-dice/private.wx20a31f84ad3fc6fb.key（勿入 repo）；IP 白名单建议关闭。
 // 用法：pnpm build && node scripts/ops/upload-trial.mjs [版本号] [描述]
 //   上传成功后到 mp 后台 → 版本管理 → 把该版本设为「体验版」（首次需手动设一次，之后沿用）。
 import { existsSync } from 'node:fs'
@@ -10,7 +10,7 @@ import { fileURLToPath } from 'node:url'
 import ci from 'miniprogram-ci'
 
 const APPID = 'wx20a31f84ad3fc6fb'
-const KEY = path.join(os.homedir(), '.secrets/wxapp-ci-key', `private.${APPID}.key`)
+const KEY = path.join(os.homedir(), '.secrets/wechat-miniprogram-ci/naoma-dahua-dice', `private.${APPID}.key`)
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 
 if (!existsSync(KEY)) {

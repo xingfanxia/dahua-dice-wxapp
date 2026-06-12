@@ -48,7 +48,7 @@ pnpm build        # weapp 生产构建 → dist/
 pnpm test         # vitest — 引擎单测（web 版同套 42）+ 云函数 fake-db 测试（15）
 pnpm smoke        # automator 冒烟（WXAPP-1 echo 版）
 pnpm smoke:ui     # automator UI 冒烟（WXAPP-4 版：建房→lobby→规则→离开→假码三态；需云函数已部署）
-pnpm deploy:fn    # miniprogram-ci 部署云函数（需 ~/.secrets/wxapp-ci-key/ 密钥）
+pnpm deploy:fn    # miniprogram-ci 部署云函数（需 ~/.secrets/wechat-miniprogram-ci/naoma-dahua-dice/ 密钥）
 pnpm upload:trial # miniprogram-ci 上传体验版（同上）
 pnpm typecheck    # tsc --noEmit
 pnpm build:fn     # esbuild 打包 cloud-src/room → cloudfunctions/room/index.js（wx-server-sdk external）

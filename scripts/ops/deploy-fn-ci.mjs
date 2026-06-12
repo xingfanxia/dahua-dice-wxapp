@@ -9,7 +9,7 @@ import ci from 'miniprogram-ci'
 
 const APPID = 'wx20a31f84ad3fc6fb'
 const ENV = 'cloud1-d5gfumwck6e89f9e6'
-const KEY = path.join(os.homedir(), '.secrets/wxapp-ci-key', `private.${APPID}.key`)
+const KEY = path.join(os.homedir(), '.secrets/wechat-miniprogram-ci/naoma-dahua-dice', `private.${APPID}.key`)
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 
 if (!existsSync(KEY)) {

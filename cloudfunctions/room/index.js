@@ -11,6 +11,16 @@ function wxRoomDb(db2) {
   const rooms = db2.collection("rooms");
   const hands = db2.collection("hands");
   const stats = db2.collection("stats");
+  const withEnsure = async (name, fn) => {
+    try {
+      return await fn();
+    } catch (err) {
+      if (!isCollectionMissing(err)) throw err;
+      await db2.createCollection(name).catch(() => {
+      });
+      return fn();
+    }
+  };
   const setAll = (doc) => {
     const out = {};
     for (const [k, v] of Object.entries(doc)) {
@@ -33,7 +43,7 @@ function wxRoomDb(db2) {
     },
     async createRoom(code, doc) {
       try {
-        await rooms.add({ data: { _id: code, ...doc, updatedAt: now() } });
+        await withEnsure("rooms", () => rooms.add({ data: { _id: code, ...doc, updatedAt: now() } }));
         return true;
       } catch (err) {
         if (isDuplicate(err)) return false;
@@ -53,11 +63,14 @@ function wxRoomDb(db2) {
     },
     async setHands(code, round, handsMap) {
       const t = now();
-      await Promise.all(
-        Object.entries(handsMap).map(
-          ([openid, dice]) => hands.doc(`${code}_${openid}`).set({
-            data: { openid, roomCode: code, round, dice, updatedAt: t }
-          })
+      await withEnsure(
+        "hands",
+        () => Promise.all(
+          Object.entries(handsMap).map(
+            ([openid, dice]) => hands.doc(`${code}_${openid}`).set({
+              data: { openid, roomCode: code, round, dice, updatedAt: t }
+            })
+          )
         )
       );
     },
@@ -90,13 +103,17 @@ function wxRoomDb(db2) {
       }
     },
     async setStats(openid, doc) {
-      await stats.doc(openid).set({ data: doc });
+      await withEnsure("stats", () => stats.doc(openid).set({ data: doc }));
     }
   };
 }
 function errCode(err) {
   const e = err;
   return String((e == null ? void 0 : e.errCode) ?? (e == null ? void 0 : e.code) ?? (e == null ? void 0 : e.message) ?? "");
+}
+function isCollectionMissing(err) {
+  const c = errCode(err);
+  return c.includes("-502005") || c.toUpperCase().includes("COLLECTION_NOT_EXIST") || c.includes("collection not exists");
 }
 function isNotFound(err) {
   const c = errCode(err);

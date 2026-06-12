@@ -64,6 +64,17 @@ export function wxRoomDb(db: any): RoomDb {
   const hands = db.collection('hands');
   const stats = db.collection('stats');
 
+  /** 写路径懒建集合：首次写到不存在的集合 → createCollection → 重试一次（免去人肉 init 步骤） */
+  const withEnsure = async <T>(name: string, fn: () => Promise<T>): Promise<T> => {
+    try {
+      return await fn();
+    } catch (err: unknown) {
+      if (!isCollectionMissing(err)) throw err;
+      await db.createCollection(name).catch(() => {}); // 并发建同名集合 → 忽略已存在
+      return fn();
+    }
+  };
+
   /** 全字段 _.set：文档库 update 对嵌套对象默认 merge，会把数组收缩/字段删除吞掉 */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const setAll = (doc: Record<string, any>) => {
@@ -91,7 +102,7 @@ export function wxRoomDb(db: any): RoomDb {
     },
     async createRoom(code, doc) {
       try {
-        await rooms.add({ data: { _id: code, ...doc, updatedAt: now() } });
+        await withEnsure('rooms', () => rooms.add({ data: { _id: code, ...doc, updatedAt: now() } }));
         return true;
       } catch (err: unknown) {
         if (isDuplicate(err)) return false;
@@ -110,11 +121,13 @@ export function wxRoomDb(db: any): RoomDb {
     },
     async setHands(code, round, handsMap) {
       const t = now();
-      await Promise.all(
-        Object.entries(handsMap).map(([openid, dice]) =>
-          hands.doc(`${code}_${openid}`).set({
-            data: { openid, roomCode: code, round, dice, updatedAt: t },
-          }),
+      await withEnsure('hands', () =>
+        Promise.all(
+          Object.entries(handsMap).map(([openid, dice]) =>
+            hands.doc(`${code}_${openid}`).set({
+              data: { openid, roomCode: code, round, dice, updatedAt: t },
+            }),
+          ),
         ),
       );
     },
@@ -146,7 +159,7 @@ export function wxRoomDb(db: any): RoomDb {
       }
     },
     async setStats(openid, doc) {
-      await stats.doc(openid).set({ data: doc });
+      await withEnsure('stats', () => stats.doc(openid).set({ data: doc }));
     },
   };
 }
@@ -155,6 +168,10 @@ function errCode(err: unknown): string {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const e = err as any;
   return String(e?.errCode ?? e?.code ?? e?.message ?? '');
+}
+function isCollectionMissing(err: unknown): boolean {
+  const c = errCode(err);
+  return c.includes('-502005') || c.toUpperCase().includes('COLLECTION_NOT_EXIST') || c.includes('collection not exists');
 }
 function isNotFound(err: unknown): boolean {
   const c = errCode(err);
