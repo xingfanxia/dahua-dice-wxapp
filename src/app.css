@@ -1,0 +1,7 @@
+/* tailwind v4 入口（weapp-tailwindcss 重写为 weapp 安全版） */
+@import "weapp-tailwindcss/index.css";
+
+/* 模板扫描路径：原子类从这些文件收集 */
+@source "./**/*.{tsx,ts}";
+
+/* 主题 tokens：WXAPP-4 从 web 版 components/theme/tokens.ts 移植到这里（@theme + CSS 变量） */

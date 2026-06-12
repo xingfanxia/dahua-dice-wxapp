@@ -1,5 +1,7 @@
+import path from 'node:path'
 import { defineConfig, type UserConfigExport } from '@tarojs/cli'
 import TsconfigPathsPlugin from 'tsconfig-paths-webpack-plugin'
+import { WeappTailwindcss } from 'weapp-tailwindcss/webpack'
 import devConfig from './dev'
 import prodConfig from './prod'
 
@@ -51,6 +53,18 @@ export default defineConfig<'webpack5'>(async (merge, { command, mode }) => {
       },
       webpackChain(chain) {
         chain.resolve.plugin('tsconfig-paths').use(TsconfigPathsPlugin)
+        // weapp-tailwindcss v5（tailwind v4 模式）：cssEntries 指向 @import 入口
+        chain.merge({
+          plugin: {
+            'weapp-tailwindcss': {
+              plugin: WeappTailwindcss,
+              args: [{
+                rem2rpx: true,
+                cssEntries: [path.resolve(__dirname, '../src/app.css')],
+              }],
+            },
+          },
+        })
       }
     },
     h5: {
