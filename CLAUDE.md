@@ -44,11 +44,12 @@
 ```bash
 pnpm dev          # taro build --type weapp --watch（开发者工具打开本目录预览 dist/）
 pnpm build        # weapp 生产构建 → dist/
-pnpm test         # vitest — 引擎单测（与 web 版同套，42 个）
+pnpm test         # vitest — 引擎单测（web 版同套 42）+ 云函数 fake-db 测试（15）
 pnpm smoke        # automator 冒烟（需开发者工具 + 服务端口；WXAPP-1 版）
-# 云函数部署（CLI；首次部署需在 IDE 右键「上传并部署:云端安装依赖」引导建 namespace）：
-# /Applications/wechatwebdevtools.app/Contents/MacOS/cli cloud functions deploy \
-#   --env cloud1-d5gfumwck6e89f9e6 --names room --project $(pwd) --remote-npm-install
+pnpm build:fn     # esbuild 打包 cloud-src/room → cloudfunctions/room/index.js（wx-server-sdk external）
+# ⚠ 云函数部署：微信侧环境对开发者工具 CLI deploy/inc-deploy 一律报 ResourceNotFound.Namespace
+#   （IDE 图形右键部署正常 —— 两者走不同内部 API）。自动化部署唯一可行路 = miniprogram-ci 密钥。
+#   过渡期：IDE 右键 cloudfunctions/<fn> →「上传并部署:云端安装依赖」；拿到密钥后此注释换成 ci 命令
 ```
 
 ## File layout

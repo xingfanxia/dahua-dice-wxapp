@@ -75,6 +75,10 @@ interface StatsDoc {
 }
 ```
 
+- **安全规则**（IDE 云开发控制台 → 数据库 → 各集合 → 权限设置 → 自定义规则，逐集合粘贴）：
+  - `rooms`: `{"read": true, "write": false}`（client 只读 —— watch 全靠它；写全走云函数）
+  - `hands`: `{"read": "doc.openid == auth.openid", "write": false}`（owner-only，铁律 8）
+  - `stats`: `{"read": "doc._id == auth.openid", "write": false}`（战绩本人可读）
 - TTL 替代（云数据库无 Redis TTL）：`updatedAt` + 云函数定时触发器（每日）清理 >24h 的 rooms/hands。
 - 身份：`wx.login` → 云函数侧 `cloud.getWXContext().OPENID`，不存 session 集合 —— openid 即稳定匿名身份（比 web 版的 session token 更简单，砍掉整个 session 层）。昵称头像入 room.players，来自头像昵称填写能力组件。
 

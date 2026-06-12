@@ -33,6 +33,15 @@
 
 ## WXAPP-2: 后端核心（云函数 + 数据模型）
 
+> **状态：代码+测试 ✅（2026-06-12）；云端部署积压（见下）** — `cloud-src/room/`（create/get/hand/act 全 11 action/stats）+ `cloudfunctions/cleanup`；fake-db 注入 15 个云函数测试（含并发 bid CAS 冲突、战绩累计、终局全序列），57/57 绿。
+>
+> ⚠ **部署发现（2026-06-12）**：微信侧创建的环境，开发者工具 CLI `cloud functions deploy`/`inc-deploy` 一律报 `ResourceNotFound.Namespace`（IDE 图形右键部署正常 —— 两者走不同内部 API）。tcb CLI 也管不了微信侧环境的云函数。**自动化部署唯一可行路 = miniprogram-ci 密钥**（本来就是 WXAPP-7 的前置）。
+>
+> **积压的人肉步骤（一次做完，全自动化从此解锁）**：
+> 1. mp 后台 → 开发管理 → 开发设置 → 生成「小程序代码上传密钥」，密钥文件存 `~/.secrets/wxapp-ci-key/private.wx20a31f84ad3fc6fb.key`（勿入 repo）；IP 白名单建议关闭（家用 IP 会变）
+> 2. IDE 里右键 `cloudfunctions/room` →「上传并部署:云端安装依赖」（更新到 WXAPP-2 新代码）；同样右键部署 `cloudfunctions/cleanup`（新函数 + 定时触发器要在 IDE 上传触发器）
+> 3. 部署后在 IDE 云开发控制台数据库建集合 `rooms`/`hands`/`stats`（或模拟器里调一次 `{op:'init'}`），并给三个集合贴安全规则（JSON 见设计 §3 末尾）
+
 - `rooms`/`hands`/`stats` 集合 + 安全规则（client 对 rooms 只读、hands/stats owner-only read、全部 deny client write）
 - `stats` 战绩写入：act 的 game_end 解算内按 openid 累计（gamesPlayed/wins/challenges），微信资料冗余进 doc（设计 §3 StatsDoc，AX 2026-06-12 指示）
 - `room.create` / `room.get` / `room.act`（join/start/bid 三个 action 先行）：Zod 校验移植、openid 身份、dice-rng、version-CAS（**start 基于服务端读的 version + stale 自动重试 ≤4 — web 版教训**）

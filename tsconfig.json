@@ -27,6 +27,6 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["./src", "./types", "./config", "./engine", "./tests"],
+  "include": ["./src", "./types", "./config", "./engine", "./tests", "./cloud-src"],
   "compileOnSave": false
 }

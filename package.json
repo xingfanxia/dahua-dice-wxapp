@@ -17,7 +17,9 @@
     "build:h5": "taro build --type h5",
     "test": "vitest run",
     "test:watch": "vitest",
-    "smoke": "node scripts/smoke/wxapp1-smoke.mjs"
+    "smoke": "node scripts/smoke/wxapp1-smoke.mjs",
+    "build:fn": "esbuild cloud-src/room/index.ts --bundle --platform=node --target=node16 --external:wx-server-sdk --outfile=cloudfunctions/room/index.js --tsconfig=tsconfig.json",
+    "deploy:fn": "/Applications/wechatwebdevtools.app/Contents/MacOS/cli cloud functions deploy --env cloud1-d5gfumwck6e89f9e6 --names room cleanup --project . --remote-npm-install"
   },
   "browserslist": [
     "defaults and fully supports es6-module",
@@ -53,6 +55,7 @@
     "@types/react": "^18.0.0",
     "@types/webpack-env": "^1.13.6",
     "babel-preset-taro": "4.2.0",
+    "esbuild": "^0.28.1",
     "eslint": "^8.57.0",
     "eslint-config-taro": "4.2.0",
     "eslint-plugin-react": "^7.34.1",
@@ -68,6 +71,7 @@
     "vite": "^8.0.16",
     "vitest": "^4.1.8",
     "weapp-tailwindcss": "^5.0.7",
-    "webpack": "5.91.0"
+    "webpack": "5.91.0",
+    "zod": "^4.4.3"
   }
 }
