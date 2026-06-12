@@ -3,6 +3,7 @@
  * 单独成文件的原因：测试只 import useRoomSync 核心（零 Taro 依赖），页面 import 这里。
  */
 import Taro from '@tarojs/taro'
+import { useMemo } from 'react'
 import type { RoomSnapshot, RoomSyncDeps } from './useRoomSync'
 import { useRoomSync } from './useRoomSync'
 
@@ -35,7 +36,9 @@ function cloudDeps(): RoomSyncDeps {
 }
 
 export function useRoomSyncCloud(code: string | null) {
-  return useRoomSync(code, cloudDeps())
+  // deps 稳定化（review M3）：每渲染重建 deps 会让 resync 身份每帧变化，连锁拖垮上层 memo
+  const deps = useMemo(() => cloudDeps(), [])
+  return useRoomSync(code, deps)
 }
 
 /** 我的手牌（round 变化时拉取；带 round 标签防旧响应覆写新一轮 —— web 版教训） */

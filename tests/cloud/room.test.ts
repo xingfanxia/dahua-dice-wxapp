@@ -334,3 +334,32 @@ describe('boundary', () => {
     expect(r).toEqual({ ok: true, echo: 'x', openid: P1 });
   });
 });
+
+describe('review 回归（H1/H2/M5）', () => {
+  it('非成员读手牌 → not_in_room；round 不匹配 → no_hand', async () => {
+    const { db, code } = await createJoined();
+    await dispatch(db, P1, { op: 'act', action: { type: 'start', code } });
+
+    const outsider = (await dispatch(db, 'openid-outsider', { op: 'hand', code })) as R;
+    expect(outsider.reason).toBe('not_in_room');
+
+    // 模拟"手牌已写、房间 CAS 未提交"的窗口：手牌 round 超前于房间 round
+    db.forceHands(code, 99, { [P1]: [1, 2, 3, 4, 5], [P2]: [1, 2, 3, 4, 5] });
+    const ahead = (await dispatch(db, P1, { op: 'hand', code })) as R;
+    expect(ahead.reason).toBe('no_hand');
+  });
+
+  it('头像只收 cloud:// 或 https://（data:/http: 一律置空）', async () => {
+    const db = fakeRoomDb();
+    const created = (await dispatch(db, P1, { op: 'create', nick: '阿鑫', avatarUrl: 'data:image/png;base64,xxx' })) as R;
+    let state = (await dispatch(db, P1, { op: 'get', code: created.code })) as R;
+    expect(state.state.players[0].avatar).toBe('');
+
+    await dispatch(db, P2, {
+      op: 'act',
+      action: { type: 'join', code: created.code, nick: '老王', avatarUrl: 'cloud://env.bucket/avatars/a.png' },
+    });
+    state = (await dispatch(db, P1, { op: 'get', code: created.code })) as R;
+    expect(state.state.players[1].avatar).toBe('cloud://env.bucket/avatars/a.png');
+  });
+});

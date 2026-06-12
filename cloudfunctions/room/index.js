@@ -14978,7 +14978,8 @@ function validateNickname(input) {
 function normalizeAvatarUrl(input) {
   if (typeof input !== "string") return "";
   const s = input.trim();
-  if (s.length === 0 || s.length > 1024 || /[\x00-\x1F<>"'`]/.test(s)) return "";
+  if (s.length === 0 || s.length > 512 || /[\x00-\x1F<>"'`\\]/.test(s)) return "";
+  if (!s.startsWith("cloud://") && !s.startsWith("https://")) return "";
   return s;
 }
 var gameRulesSchema = external_exports.object({
@@ -15139,7 +15140,7 @@ async function createRoom(db2, openid, input) {
       revealedHands: null,
       updatedAt: Date.now()
     };
-    if (await db2.createRoom(code, doc)) return { ok: true, code, version: 1 };
+    if (await db2.createRoom(code, doc)) return { ok: true, code, version: 1, playerId: openid };
   }
   return { ok: false, reason: "code_collision" };
 }
@@ -15151,8 +15152,12 @@ async function getRoom(db2, code) {
 }
 async function getMyHand(db2, code, openid) {
   if (!isValidInviteCode(code.toUpperCase())) return { ok: false, reason: "invalid_code" };
-  const hand = await db2.getMyHand(code.toUpperCase(), openid);
-  if (!hand) return { ok: false, reason: "no_hand" };
+  const upper = code.toUpperCase();
+  const state = await db2.getRoom(upper);
+  if (!state) return { ok: false, reason: "no_room" };
+  if (!state.players.some((p) => p.id === openid)) return { ok: false, reason: "not_in_room" };
+  const hand = await db2.getMyHand(upper, openid);
+  if (!hand || hand.round !== state.round) return { ok: false, reason: "no_hand" };
   return { ok: true, round: hand.round, dice: hand.dice };
 }
 async function act(db2, openid, action) {
@@ -15193,14 +15198,14 @@ async function join(db2, code, openid, nickRaw, avatarRaw) {
       const players2 = state.players.map(
         (p, i) => i === existing ? { ...p, nick: v.value, avatar: avatarUrl } : p
       );
-      return { ok: true, doc: { ...state, players: players2, version: state.version + 1 }, extra: { rejoined: true } };
+      return { ok: true, doc: { ...state, players: players2, version: state.version + 1 }, extra: { rejoined: true, playerId: openid } };
     }
     if (state.players.length >= MAX_PLAYERS) return { ok: false, reason: "room_full" };
     const players = [
       ...state.players,
       { id: openid, nick: v.value, avatar: avatarUrl, diceLeft: state.rules.diceCount, alive: true }
     ];
-    return { ok: true, doc: { ...state, players, version: state.version + 1 } };
+    return { ok: true, doc: { ...state, players, version: state.version + 1 }, extra: { playerId: openid } };
   });
 }
 async function start(db2, code, openid) {
@@ -15277,7 +15282,7 @@ async function bid(db2, code, openid, count, face, isZhai, expectedVersion) {
     currentTurnIdx: nextIdx,
     version: state.version + 1
   };
-  if (await db2.casUpdateRoom(code, expectedVersion, doc)) return { ok: true, version: doc.version };
+  if (await db2.casUpdateRoom(code, state.version, doc)) return { ok: true, version: doc.version };
   const cur = await db2.getRoom(code);
   return { ok: false, reason: "stale", currentVersion: cur == null ? void 0 : cur.version };
 }
@@ -15297,8 +15302,6 @@ async function resolve(db2, code, openid, action) {
     return { ok: false, reason: "stale", currentVersion: cur == null ? void 0 : cur.version };
   }
   await recordResolution(db2, doc, r.outcome, openid).catch(() => {
-  });
-  if (r.state.phase === "game_end") await recordGameEnd(db2, doc).catch(() => {
   });
   return { ok: true, version: r.state.version };
 }

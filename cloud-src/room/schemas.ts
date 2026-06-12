@@ -21,11 +21,15 @@ export function validateNickname(input: unknown): NickValidation {
   return { ok: true, value: trimmed };
 }
 
-/** 头像：微信官方填写能力产出的临时/云文件路径或 https URL。只做长度与字符面约束。 */
+/**
+ * 头像约束（review M5）：只接受云存储 fileID（cloud://）或 https URL，拒绝 data:/http:/
+ * 任意 scheme —— 这个字段客户端可控且会被所有房间成员的 <Image> 渲染。
+ */
 export function normalizeAvatarUrl(input: unknown): string {
   if (typeof input !== 'string') return '';
   const s = input.trim();
-  if (s.length === 0 || s.length > 1024 || /[\x00-\x1F<>"'`]/.test(s)) return '';
+  if (s.length === 0 || s.length > 512 || /[\x00-\x1F<>"'`\\]/.test(s)) return '';
+  if (!s.startsWith('cloud://') && !s.startsWith('https://')) return '';
   return s;
 }
 

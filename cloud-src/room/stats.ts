@@ -1,7 +1,8 @@
 /**
  * 玩家战绩（设计 §3 StatsDoc，AX 2026-06-12 指示：统计挂微信身份/openid）。
- * 写入只发生在 room 云函数内（单写入口铁律不破例）；按 openid 单写者，读-改-写即可。
- * 失败不致命 —— 调用方 catch 后继续（战绩丢一次 ≪ 游戏动作失败）。
+ * 写入只发生在 room 云函数内（单写入口铁律不破例）。读-改-写无隔离：同一玩家在
+ * 两个房间同时终局会丢一次增量（review M4 —— 已知且容忍：聚会谈资不是天梯；
+ * 失败同样不致命，调用方 catch 后继续）。要收紧就换 db.command.inc 原子自增。
  */
 import type { ChallengeOutcome } from '@/lib/game-engine/types';
 import type { RoomDb, RoomDoc, StatsDoc } from './db';

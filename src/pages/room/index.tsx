@@ -14,9 +14,10 @@ import { RevealStage } from '@/components/game/RevealStage'
 import { AvatarBadge } from '@/components/game/AvatarBadge'
 import { useRoomSyncCloud, fetchMyHand } from '@/hooks/useRoomSyncCloud'
 import { useThemeMode } from '@/hooks/useThemeMode'
+import { RulesEditor } from '@/components/game/RulesEditor'
 import { callRoom, postAction, reasonText } from '@/lib/actions'
 import { getProfile, setProfile, uploadAvatar } from '@/lib/profile'
-import type { Bid } from '@/lib/game-engine/types'
+import type { Bid, GameRules } from '@/lib/game-engine/types'
 
 const STALE_BANNER_MS = 10_000
 const STALE_OVERLAY_MS = 30_000
@@ -206,6 +207,7 @@ export default function Room() {
       {state.phase === 'lobby' ? (
         <LobbyView state={state} myId={myId} isOwner={isOwner} busy={busy} code={code}
           onStart={() => act({ type: 'start', code })}
+          onUpdateRules={(rules) => act({ type: 'updateRules', code, rules })}
           onLeave={async () => {
             await act({ type: 'leave', code })
             Taro.reLaunch({ url: '/pages/index/index' })
@@ -242,7 +244,8 @@ export default function Room() {
 
           {state.phase === 'reveal' && (
             <>
-              <RevealStage state={state} hands={state.revealedHands ?? null} myId={myId} />
+              {/* key={round}：连续两次揭晓不重挂载会沿用上一轮 showResult（review L4） */}
+              <RevealStage key={state.round} state={state} hands={state.revealedHands ?? null} myId={myId} />
               {state.lastChallengeResult && (
                 <View
                   className={`rounded-2xl bg-red-500 py-3 text-center ${busy ? 'opacity-40' : ''}`}
@@ -317,6 +320,7 @@ function LobbyView({
   isOwner,
   busy,
   onStart,
+  onUpdateRules,
   onLeave,
 }: {
   state: NonNullable<ReturnType<typeof useRoomSyncCloud>['state']>
@@ -325,9 +329,11 @@ function LobbyView({
   busy: boolean
   code: string
   onStart: () => void
+  onUpdateRules: (rules: GameRules) => void
   onLeave: () => void
 }) {
   const canStart = state.players.length >= 2
+  const [rulesOpen, setRulesOpen] = useState(false)
   return (
     <>
       <View className='flex flex-col gap-2'>
@@ -348,16 +354,36 @@ function LobbyView({
         )}
       </View>
 
-      <View className='flex flex-col gap-1 rounded-xl bg-white p-3 dark:bg-gray-800'>
-        <Text className='text-xs uppercase tracking-wide text-gray-400'>规则</Text>
-        <Text className='text-sm text-gray-700 dark:text-gray-300'>
-          每人 {state.rules.diceCount} 颗 · {state.rules.aceWild ? '1点万能' : '1点不算'} ·{' '}
-          {state.rules.allowZhai ? '允许斋' : '禁斋'}
-          {state.rules.chineseExtensions.pi ? ' · 劈' : ''}
-          {state.rules.chineseExtensions.tongsha ? ' · 通杀' : ''}
-          {state.rules.paliFicoVariant ? ' · Palifico' : ''}
-        </Text>
-      </View>
+      {rulesOpen && isOwner ? (
+        <RulesEditor
+          rules={state.rules}
+          busy={busy}
+          onSave={(rules) => {
+            onUpdateRules(rules)
+            setRulesOpen(false)
+          }}
+          onClose={() => setRulesOpen(false)}
+        />
+      ) : (
+        <View className='flex flex-col gap-1 rounded-xl bg-white p-3 dark:bg-gray-800'>
+          <View className='flex items-center justify-between'>
+            <Text className='text-xs uppercase tracking-wide text-gray-400'>规则</Text>
+            {isOwner && (
+              <Text className='text-xs text-red-500' onClick={() => setRulesOpen(true)}>
+                修改规则
+              </Text>
+            )}
+          </View>
+          <Text className='text-sm text-gray-700 dark:text-gray-300'>
+            每人 {state.rules.diceCount} 颗（{state.rules.diceSides} 面）· {state.rules.aceWild ? '1点万能' : '1点不算'} ·{' '}
+            {state.rules.allowZhai ? '允许斋' : '禁斋'}
+            {state.rules.chineseExtensions.pi ? ' · 劈' : ''}
+            {state.rules.chineseExtensions.fanpi ? ' · 反劈' : ''}
+            {state.rules.chineseExtensions.tongsha ? ' · 通杀' : ''}
+            {state.rules.paliFicoVariant ? ' · Palifico' : ''}
+          </Text>
+        </View>
+      )}
 
       <View className='mt-auto flex flex-col gap-2'>
         {isOwner ? (
@@ -391,9 +417,10 @@ function WaitNextGame({
   onRetry: () => void
   state: { phase: string }
 }) {
-  // game_end / 回到 lobby 时自动重试 join（rematch 后满血回归路径）
+  // 只在回到 lobby 时自动重试 join（rematch 后满血回归路径）。game_end 不能试 ——
+  // join 对 game_end 回 game_ended，会把观战者打进通用错误页死路（review M1）。
   useEffect(() => {
-    if (state.phase === 'lobby' || state.phase === 'game_end') onRetry()
+    if (state.phase === 'lobby') onRetry()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.phase])
   return (

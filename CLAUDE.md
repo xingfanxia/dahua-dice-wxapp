@@ -1,6 +1,6 @@
 # dahua-dice-wxapp — Project Instructions
 
-> 大话骰（Liar's Dice）的**微信小程序版**。web 版在 sibling repo `~/projects/side-projects/dahua-dice/`（Next.js + Vercel + Upstash，已上线 dahua-dice.vercel.app）。本 repo 当前状态：**WXAPP-0/1 已完成（2026-06-12）** —— 账号/云环境就绪，脚手架+引擎(42 单测)+tailwind+云函数 echo 全链路冒烟 PASS。下一步 **WXAPP-2 后端核心**，见 `docs/plans/2026-06-11-wxapp-plan.md`。
+> 大话骰（Liar's Dice）的**微信小程序版**。web 版在 sibling repo `~/projects/side-projects/dahua-dice/`（Next.js + Vercel + Upstash，已上线 dahua-dice.vercel.app）。本 repo 当前状态：**WXAPP-0..7 agent 可做部分全部完成（2026-06-12）** —— 后端全 action+stats、双通道同步、全 UI（首页/房间全 phase + 三态 + 观战 + staleness + dark/light）、规则编辑器、分享闭环、65 测试绿。**剩余 = 人肉步骤**（ci 密钥→自动部署/上传、安全规则粘贴、真机双人验证），清单见 `docs/plans/2026-06-11-wxapp-plan.md` WXAPP-2 状态块。
 
 ## Identity
 
@@ -45,7 +45,11 @@
 pnpm dev          # taro build --type weapp --watch（开发者工具打开本目录预览 dist/）
 pnpm build        # weapp 生产构建 → dist/
 pnpm test         # vitest — 引擎单测（web 版同套 42）+ 云函数 fake-db 测试（15）
-pnpm smoke        # automator 冒烟（需开发者工具 + 服务端口；WXAPP-1 版）
+pnpm smoke        # automator 冒烟（WXAPP-1 echo 版）
+pnpm smoke:ui     # automator UI 冒烟（WXAPP-4 版：建房→lobby→规则→离开→假码三态；需云函数已部署）
+pnpm deploy:fn    # miniprogram-ci 部署云函数（需 ~/.secrets/wxapp-ci-key/ 密钥）
+pnpm upload:trial # miniprogram-ci 上传体验版（同上）
+pnpm typecheck    # tsc --noEmit
 pnpm build:fn     # esbuild 打包 cloud-src/room → cloudfunctions/room/index.js（wx-server-sdk external）
 # ⚠ 云函数部署：微信侧环境对开发者工具 CLI deploy/inc-deploy 一律报 ResourceNotFound.Namespace
 #   （IDE 图形右键部署正常 —— 两者走不同内部 API）。自动化部署唯一可行路 = miniprogram-ci 密钥。

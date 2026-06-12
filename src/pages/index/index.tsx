@@ -69,8 +69,9 @@ export default function Index() {
       return
     }
     const code = joinCode.trim().toUpperCase()
-    if (!/^[A-Z2-9]{6}$/.test(code)) {
-      setError('邀请码必须 6 位')
+    // alphabet 同 cloud-src/room/rng.ts（排除 0/1/I/L/O —— review L3 防止两处定义漂移）
+    if (!/^[A-HJ-KM-NP-Z2-9]{6}$/.test(code)) {
+      setError('邀请码必须 6 位（不含 0/1/I/L/O）')
       return
     }
     saveProfile(n, avatarUrl)

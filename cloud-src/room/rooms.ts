@@ -111,8 +111,14 @@ export async function getRoom(db: RoomDb, code: string): Promise<ActionResult> {
 
 export async function getMyHand(db: RoomDb, code: string, openid: string): Promise<ActionResult> {
   if (!isValidInviteCode(code.toUpperCase())) return { ok: false, reason: 'invalid_code' };
-  const hand = await db.getMyHand(code.toUpperCase(), openid);
-  if (!hand) return { ok: false, reason: 'no_hand' };
+  const upper = code.toUpperCase();
+  // 成员校验 + round 校验（review H1/H2）：手牌文档先于房间 CAS 写入（_id 幂等可覆写），
+  // 不带这两道闸，一个失败 CAS 窗口里的"下一轮手牌"就能被提前读走。
+  const state = await db.getRoom(upper);
+  if (!state) return { ok: false, reason: 'no_room' };
+  if (!state.players.some((p) => p.id === openid)) return { ok: false, reason: 'not_in_room' };
+  const hand = await db.getMyHand(upper, openid);
+  if (!hand || hand.round !== state.round) return { ok: false, reason: 'no_hand' };
   return { ok: true, round: hand.round, dice: hand.dice };
 }
 
@@ -267,7 +273,8 @@ async function bid(
     currentTurnIdx: nextIdx,
     version: state.version + 1,
   };
-  if (await db.casUpdateRoom(code, expectedVersion, doc)) return { ok: true, version: doc.version };
+  // CAS 统一用 state.version（上方相等性守卫已证其 === expectedVersion）—— 与 resolve/nextRound 同风格
+  if (await db.casUpdateRoom(code, state.version, doc)) return { ok: true, version: doc.version };
   const cur = await db.getRoom(code);
   return { ok: false, reason: 'stale', currentVersion: cur?.version };
 }
@@ -300,7 +307,8 @@ async function resolve(
     return { ok: false, reason: 'stale', currentVersion: cur?.version };
   }
   await recordResolution(db, doc, r.outcome, openid).catch(() => {});
-  if (r.state.phase === 'game_end') await recordGameEnd(db, doc).catch(() => {});
+  // 终局战绩（gamesPlayed/wins）在 nextRound→game_end 路径记录：引擎 resolve 一律落在
+  // reveal（gameEnded 只是标记），真正翻 game_end 是 nextRound 的事（review L1）。
   return { ok: true, version: r.state.version };
 }
 

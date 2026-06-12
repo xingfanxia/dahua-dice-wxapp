@@ -50,11 +50,17 @@
 
 ## WXAPP-3: 实时同步双通道
 
+> **状态：hook 层 ✅（2026-06-12）** — useRoomSync（注入式核心 + Taro.cloud 薄包装），8 个行为测试绿。连接压测（6 客户端 watch 限额）积压在云端部署之后。
+
+
 - `useRoomSync` hook：`db.watch`（onChange 全量快照）+ 3s poll 兜底 + version 单调去重 + 掉线重建 watch（指数退避）
 - **连接压测（风险卡点）**：6 个客户端（automator 多开/真机+工具）各 watch rooms+hands，确认免费环境连接限额无碍；不行则启用 poll-only 降级开关
 - **Verify**: 双端开发者工具模拟 2 人，A bid → B 界面 <2s 更新；人为断 watch（关 wifi 重连）→ poll 接管无白屏
 
 ## WXAPP-4: 游戏 UI 主链路
+
+> **状态：代码 ✅（2026-06-12）** — 首页+房间页全 phase、§5.5 状态表全量（昵称 sheet/三态/观战/staleness）、音效+震动、dark/light。UI 冒烟脚本 `scripts/smoke/wxapp4-smoke.mjs` 就绪（待云函数部署后跑）。⚠ automator 单实例同 openid 无法双人 —— "真的把一整局玩完"的整局逻辑由 tests/cloud 确定手牌全序列覆盖，双人实操归真机两账号步骤。
+
 
 - pages/index：昵称+头像（官方填写能力）、创建/加入房间
 - pages/room：lobby（成员列表/规则抽屉/开始）+ bidding（PlayerRing/BidPanel/BidChain）+ reveal（RevealStage + 手牌揭晓）+ game_end（rematch/离开）
@@ -64,11 +70,17 @@
 
 ## WXAPP-5: 完整规则
 
+> **状态：代码 ✅（2026-06-12）** — RulesEditor（骰数/面数/万能1/斋/劈·反劈·通杀/Palifico）lobby 接线；规则语义引擎单测 42 + 云函数 fake-db 测试覆盖。局内劈/通杀/Palifico 实操验证归真机步骤。
+
+
 - 劈/反劈/通杀/Palifico/8 面骰/转斋/叫1必斋/total-dice cap —— 引擎已带，工作量在 UI 接线 + i18n 文案（抄 zh-CN.json）
 - **opening-bid floor clamp 到 totalDice（web 版 1v1 softlock 教训）单测必须随引擎一起在**
 - **Verify**: 引擎单测全绿 + automator 跑 劈/通杀/Palifico 各一局（对齐 web 版 pi.spec/palifico.spec 覆盖面）
 
 ## WXAPP-6: 社交闭环（本项目的存在理由）
+
+> **状态：代码 ✅（2026-06-12）** — onShareAppMessage 卡片（path 带码）+ onLoad 自动 join + 昵称 sheet 直达链路；`cloudfunctions/qrcode`（getUnlimited trial 码，待部署）；首页战绩卡片。动态消息按时间盒砍掉。真机卡片实测/非成员拦截 SOP 归真机步骤。
+
 
 - `onShareAppMessage`：title "来玩大话骰 · 房间XXXX 等你" + 5:4 主题卡图 + path 带 code；onLoad 自动 join
 - `getunlimitedqrcode`（trial）永久小程序码生成脚本（群公告用）
@@ -77,6 +89,9 @@
 - **Verify**: 真机×2（体验成员）：A 群里发卡片 → B 点卡片直接落进房间并自动入座；另用一个**非成员**微信号点卡片，确认微信系统拦截页符合预期并把该行为写进 README 成员 SOP（"这不是 bug"）
 
 ## WXAPP-7: 打磨 + 体验版发布
+
+> **状态：脚本就绪（2026-06-12）** — `scripts/ops/upload-trial.mjs` + `scripts/ops/deploy-fn-ci.mjs`（miniprogram-ci，等密钥即全自动）。真机双端整局 + 体验码发朋友 = 人肉验证。
+
 
 - Dice2D 动画移植/简化、加载/错误态、断线横幅（staleness 驱动，非 watch 状态 —— web 版教训）
 - `miniprogram-ci` 上传脚本 → 设为体验版；README 写成员管理 SOP
