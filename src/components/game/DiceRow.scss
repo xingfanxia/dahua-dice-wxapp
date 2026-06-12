@@ -1,0 +1,30 @@
+/* 摇骰动画（WXAPP-7 Dice2D 简化版）：纯 transform/opacity，WXSS 安全；动画纯装饰（铁律 4） */
+@keyframes dice-tumble {
+  0% { transform: translateY(0) rotate(0deg); }
+  20% { transform: translateY(-14rpx) rotate(28deg); }
+  40% { transform: translateY(4rpx) rotate(-22deg); }
+  60% { transform: translateY(-10rpx) rotate(14deg); }
+  80% { transform: translateY(2rpx) rotate(-8deg); }
+  100% { transform: translateY(0) rotate(0deg); }
+}
+
+@keyframes dice-pop {
+  0% { transform: scale(0.6); opacity: 0; }
+  70% { transform: scale(1.12); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.dice-tumbling {
+  animation: dice-tumble 0.55s ease-in-out infinite;
+}
+
+.dice-revealed {
+  animation: dice-pop 0.35s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dice-tumbling,
+  .dice-revealed {
+    animation: none;
+  }
+}
