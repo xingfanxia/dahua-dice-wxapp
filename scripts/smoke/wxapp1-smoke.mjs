@@ -47,6 +47,6 @@ try {
   console.log(failed ? 'SMOKE FAIL' : 'SMOKE PASS')
   process.exitCode = failed ? 1 : 0
 } finally {
-  // close 偶发 Connection closed（IDE 已自行退出）—— 不让收尾噪音盖过真实结果
-  await miniProgram.close().catch(() => {})
+  // disconnect 而非 close：close 会关掉整个开发者工具（单实例共享，铁律 12）
+  try { miniProgram.disconnect() } catch { /* 已断开 */ }
 }

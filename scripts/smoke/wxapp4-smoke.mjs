@@ -109,5 +109,6 @@ try {
 
   console.log(process.exitCode === 1 ? 'SMOKE DONE (with failures)' : 'SMOKE PASS')
 } finally {
-  await miniProgram.close()
+  // disconnect 而非 close：close 会关掉整个开发者工具（单实例共享，铁律 12）
+  try { miniProgram.disconnect() } catch { /* 已断开 */ }
 }
