@@ -6,14 +6,16 @@
 
 | 文件 | 内容 | 时长 | 大小 | 来源 |
 |---|---|---|---|---|
-| `dice-shake.mp3` | 真实塑料骰盅摇骰录音（48kHz mono mp3） | 1.13s | 28KB | [Freesound · "dice_shake" by mackxd (#529816)](https://freesound.org/people/mackxd/sounds/529816/)，CC0 |
+| `dice-shake.mp3` | 骰子落桌/扣盅声（AX 2026-06-12 钦定；内容 = Kenney `dice-throw-1`，128kbps 转码自官方 ogg） | 0.68s | 11KB | [Kenney · Casino Audio pack](https://kenney.nl/assets/casino-audio)，CC0 |
+
+> 同一采样也接进了 web 版（`dahua-dice/public/audio/dice-throw.{mp3,webm}` → `useDiceAudio.settle()`），两边音感保持一致。
 
 ## 备选（`alternates/`，不进小程序包）
 
 | 文件 | 内容 | 时长 | 来源 |
 |---|---|---|---|
 | `kenney-dice-shake-1/2/3.mp3` | 骰盅摇晃 3 个变体（游戏化音色，64kbps 转码自官方 ogg） | 1.4–1.6s | [Kenney · Casino Audio pack](https://kenney.nl/assets/casino-audio)，CC0 |
-| `kenney-dice-throw-1.mp3` | 骰子落桌/扣盅声 —— 未来若想给 reveal（开盅）配音，用这个 | 0.68s | 同上 |
+| `freesound-dice-shake-mackxd.mp3` | 真实塑料骰盅摇骰录音（48kHz mono） | 1.13s | [Freesound · "dice_shake" by mackxd (#529816)](https://freesound.org/people/mackxd/sounds/529816/)，CC0 |
 
 ## 规则
 
