@@ -6,7 +6,7 @@ import devConfig from './dev'
 import prodConfig from './prod'
 
 // https://taro-docs.jd.com/docs/next/config#defineconfig-辅助函数
-export default defineConfig<'webpack5'>(async (merge, { command, mode }) => {
+export default defineConfig<'webpack5'>(async (merge) => {
   const baseConfig: UserConfigExport<'webpack5'> = {
     projectName: 'dahua-dice-wxapp',
     date: '2026-6-12',
@@ -26,6 +26,8 @@ export default defineConfig<'webpack5'>(async (merge, { command, mode }) => {
     },
     copy: {
       patterns: [
+        // 摇骰音效：repo 根 assets/ 是唯一资产源（license 见 assets/audio/README.md）
+        { from: 'assets/audio/dice-shake.mp3', to: 'dist/assets/audio/dice-shake.mp3' },
       ],
       options: {
       }

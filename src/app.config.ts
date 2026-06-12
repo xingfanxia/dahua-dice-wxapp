@@ -1,11 +1,12 @@
 export default defineAppConfig({
-  pages: [
-    'pages/index/index'
-  ],
+  pages: ['pages/index/index', 'pages/room/index'],
+  darkmode: true,
+  themeLocation: 'theme.json',
   window: {
-    backgroundTextStyle: 'light',
-    navigationBarBackgroundColor: '#fff',
+    backgroundTextStyle: '@bgTxtStyle',
+    navigationBarBackgroundColor: '@navBgColor',
     navigationBarTitleText: '闹麻大话骰',
-    navigationBarTextStyle: 'black'
-  }
+    navigationBarTextStyle: '@navTxtStyle',
+    backgroundColor: '@bgColor',
+  },
 })

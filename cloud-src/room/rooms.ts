@@ -95,7 +95,7 @@ export async function createRoom(
       revealedHands: null,
       updatedAt: Date.now(),
     };
-    if (await db.createRoom(code, doc)) return { ok: true, code, version: 1 };
+    if (await db.createRoom(code, doc)) return { ok: true, code, version: 1, playerId: openid };
   }
   return { ok: false, reason: 'code_collision' };
 }
@@ -160,14 +160,14 @@ async function join(db: RoomDb, code: string, openid: string, nickRaw: string, a
       const players = state.players.map((p, i) =>
         i === existing ? { ...p, nick: v.value, avatar: avatarUrl } : p,
       );
-      return { ok: true, doc: { ...state, players, version: state.version + 1 }, extra: { rejoined: true } };
+      return { ok: true, doc: { ...state, players, version: state.version + 1 }, extra: { rejoined: true, playerId: openid } };
     }
     if (state.players.length >= MAX_PLAYERS) return { ok: false, reason: 'room_full' };
     const players = [
       ...state.players,
       { id: openid, nick: v.value, avatar: avatarUrl, diceLeft: state.rules.diceCount, alive: true },
     ];
-    return { ok: true, doc: { ...state, players, version: state.version + 1 } };
+    return { ok: true, doc: { ...state, players, version: state.version + 1 }, extra: { playerId: openid } };
   });
 }
 

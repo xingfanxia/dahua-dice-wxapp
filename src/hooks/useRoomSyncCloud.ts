@@ -14,8 +14,9 @@ function cloudDeps(): RoomSyncDeps {
         .collection('rooms')
         .where({ _id: code })
         .watch({
-          onChange(snapshot: { docs?: RoomSnapshot[] }) {
-            const doc = snapshot.docs?.[0]
+          onChange(snapshot: unknown) {
+            // Taro 类型把 onChange 标成 CallbackResult，实际是 {docs} 快照（微信文档语义）
+            const doc = (snapshot as { docs?: RoomSnapshot[] }).docs?.[0]
             if (doc) onSnapshot(doc)
           },
           onError,

@@ -4,4 +4,5 @@
 /* 模板扫描路径：原子类从这些文件收集 */
 @source "./**/*.{tsx,ts}";
 
-/* 设计 tokens：WXAPP-4 按设计契约 §5.1 落地 —— 简洁中性 + 单强调色，dark/light 双套 CSS 变量（不移植 web 主题） */
+/* dark 模式：页面根 View 挂 .dark class（useThemeMode 驱动），dark: variant 据此生效（设计 §5.1） */
+@custom-variant dark (&:where(.dark, .dark *));

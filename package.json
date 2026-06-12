@@ -19,7 +19,8 @@
     "test:watch": "vitest",
     "smoke": "node scripts/smoke/wxapp1-smoke.mjs",
     "build:fn": "esbuild cloud-src/room/index.ts --bundle --platform=node --target=node16 --external:wx-server-sdk --outfile=cloudfunctions/room/index.js --tsconfig=tsconfig.json",
-    "deploy:fn": "/Applications/wechatwebdevtools.app/Contents/MacOS/cli cloud functions deploy --env cloud1-d5gfumwck6e89f9e6 --names room cleanup --project . --remote-npm-install"
+    "deploy:fn": "/Applications/wechatwebdevtools.app/Contents/MacOS/cli cloud functions deploy --env cloud1-d5gfumwck6e89f9e6 --names room cleanup --project . --remote-npm-install",
+    "typecheck": "tsc --noEmit"
   },
   "browserslist": [
     "defaults and fully supports es6-module",
