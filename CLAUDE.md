@@ -1,6 +1,6 @@
 # dahua-dice-wxapp — Project Instructions
 
-> 大话骰（Liar's Dice）的**微信小程序版**。web 版在 sibling repo `~/projects/side-projects/dahua-dice/`（Next.js + Vercel + Upstash，已上线 dahua-dice.vercel.app）。本 repo 当前状态：**规划完成，未开工** —— 设计/计划/前置条件都已写好，从 `docs/plans/2026-06-11-wxapp-plan.md` 的 WXAPP-0 开始。
+> 大话骰（Liar's Dice）的**微信小程序版**。web 版在 sibling repo `~/projects/side-projects/dahua-dice/`（Next.js + Vercel + Upstash，已上线 dahua-dice.vercel.app）。本 repo 当前状态：**WXAPP-0/1 已完成（2026-06-12）** —— 账号/云环境就绪，脚手架+引擎(42 单测)+tailwind+云函数 echo 全链路冒烟 PASS。下一步 **WXAPP-2 后端核心**，见 `docs/plans/2026-06-11-wxapp-plan.md`。
 
 ## Identity
 
@@ -42,11 +42,16 @@
 ## Commands
 
 ```bash
-# WXAPP-1 脚手架后填入实际命令（taro build / vitest / automator 冒烟 / ci 上传）
-# 当前 repo 只有 docs，无 build
+pnpm dev          # taro build --type weapp --watch（开发者工具打开本目录预览 dist/）
+pnpm build        # weapp 生产构建 → dist/
+pnpm test         # vitest — 引擎单测（与 web 版同套，42 个）
+pnpm smoke        # automator 冒烟（需开发者工具 + 服务端口；WXAPP-1 版）
+# 云函数部署（CLI；首次部署需在 IDE 右键「上传并部署:云端安装依赖」引导建 namespace）：
+# /Applications/wechatwebdevtools.app/Contents/MacOS/cli cloud functions deploy \
+#   --env cloud1-d5gfumwck6e89f9e6 --names room --project $(pwd) --remote-npm-install
 ```
 
-## File layout（规划，WXAPP-1 落地）
+## File layout
 
 ```
 engine/            # 复制自 web 版 lib/game-engine（共享给云函数与客户端）

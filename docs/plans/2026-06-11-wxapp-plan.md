@@ -23,6 +23,8 @@
 
 ## WXAPP-1: 脚手架 + 引擎移植
 
+> **状态：✅ 完成（2026-06-12）** — Taro 4.2.0 (React 18+Webpack5)；engine/ 与 web diff=0、42 单测绿；weapp-tailwindcss v5 链路验证（rpx/WXSS 安全）；BidChain 最薄移植；room 云函数 echo 已部署（首次需 IDE 右键部署引导建 namespace，之后 CLI 可用）；`pnpm smoke` automator 冒烟 PASS（渲染+echo+openid）。
+
 - `taro init`（React + TS 模板）；接 weapp-tailwindcss v4 + postcss-preset-env（oklch 降级）
 - 复制 web 版 `lib/game-engine/`（types/validate/round + 全部单测）到 `engine/`（独立 package，云函数与小程序端共享 import）；vitest 配置
 - 云开发初始化：`cloudfunctions/room/` 空函数 + `wx.cloud.init({env})`；EnvId 显式写死在代码（cloudbase skill 守则）

@@ -2,12 +2,7 @@
 
 [大话骰 web 版](https://github.com/xingfanxia/dahua-dice)的微信小程序版本 —— friends-only、非商用、**体验版分发**（永不上架，因此零备案/零审核/零版号）。核心增量：微信社交闭环 —— 群里发卡片，朋友点开直接进房间。
 
-**状态：规划完成，未开工。** 从 [`docs/plans/2026-06-11-wxapp-plan.md`](docs/plans/2026-06-11-wxapp-plan.md) 的 **WXAPP-0（人肉前置步骤）** 开始：
-
-1. 注册个人主体小程序（工具类目，⚠ 不是小游戏账号）→ 拿 AppID
-2. 开通云开发免费环境 → 拿 EnvId
-3. mp 后台添加体验成员（≤15）
-4. 装微信开发者工具 + Taro CLI
+**状态：WXAPP-0/1 已完成（2026-06-12）。** 账号「闹麻大话骰」+ 云开发环境就绪；Taro 4.2 (React 18) 脚手架、引擎移植（与 web 版 diff=0，42 单测）、weapp-tailwindcss v4 链路、`room` 云函数 echo 已部署并冒烟通过。下一步：[`docs/plans/2026-06-11-wxapp-plan.md`](docs/plans/2026-06-11-wxapp-plan.md) **WXAPP-2 后端核心**。
 
 ## 文档地图
 
