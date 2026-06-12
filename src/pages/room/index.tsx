@@ -56,6 +56,7 @@ export default function Room() {
   useShareAppMessage(() => ({
     title: `来玩大话骰 · 房间 ${code} 等你`,
     path: `/pages/room/index?code=${code}`,
+    imageUrl: '/assets/share/share-card.jpg', // 5:4 主题卡图（设计 §5.4）
   }))
 
   // join 流程：资料就绪即发 join；rejoined 也走同一路径

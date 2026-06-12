@@ -28,6 +28,8 @@ export default defineConfig<'webpack5'>(async (merge) => {
       patterns: [
         // 摇骰音效：repo 根 assets/ 是唯一资产源（license 见 assets/audio/README.md）
         { from: 'assets/audio/dice-shake.mp3', to: 'dist/assets/audio/dice-shake.mp3' },
+        // 分享卡片 5:4 主题图（设计 §5.4；gpt-image 生成，与 icon 同霓虹风）
+        { from: 'assets/share/share-card.jpg', to: 'dist/assets/share/share-card.jpg' },
       ],
       options: {
       }
