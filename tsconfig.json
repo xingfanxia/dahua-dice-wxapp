@@ -22,9 +22,11 @@
     ],
     "paths": {
       // TS5090 leading './'
+      // '@/lib/game-engine' 映射到 engine/ —— 让 web 版的引擎测试文件原样运行（铁律 9 diff=0）
+      "@/lib/game-engine/*": ["./engine/*"],
       "@/*": ["./src/*"]
     }
   },
-  "include": ["./src", "./types", "./config"],
+  "include": ["./src", "./types", "./config", "./engine", "./tests"],
   "compileOnSave": false
 }
