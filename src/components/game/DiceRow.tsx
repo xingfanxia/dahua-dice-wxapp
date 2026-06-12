@@ -38,14 +38,14 @@ export function DiceRow({ hand, round }: { hand: number[] | null; round: number 
 
   return (
     <View
-      className='flex flex-col items-center gap-1 rounded-2xl bg-white py-3 dark:bg-gray-800'
+      className='flex flex-col items-center gap-2 rounded-2xl bg-white py-5 dark:bg-gray-800'
       onClick={() => !tumbling && setCovered((c) => !c)}
     >
-      <View className='flex gap-2'>
+      <View className='flex flex-wrap items-center justify-center gap-3 px-3'>
         {hand.map((face, i) => (
           <Text
             key={`${round}-${i}`}
-            className={`text-4xl text-gray-900 dark:text-gray-100 ${
+            className={`text-[110rpx] leading-none text-gray-900 dark:text-gray-100 ${
               tumbling ? 'dice-tumbling' : 'dice-revealed'
             }`}
             style={tumbling ? { animationDelay: `${i * 60}ms` } : undefined}
