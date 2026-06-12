@@ -31,7 +31,8 @@
 
 ## WXAPP-2: 后端核心（云函数 + 数据模型）
 
-- `rooms`/`hands` 集合 + 安全规则（client 对 rooms 只读、hands owner-only read、全部 deny client write）
+- `rooms`/`hands`/`stats` 集合 + 安全规则（client 对 rooms 只读、hands/stats owner-only read、全部 deny client write）
+- `stats` 战绩写入：act 的 game_end 解算内按 openid 累计（gamesPlayed/wins/challenges），微信资料冗余进 doc（设计 §3 StatsDoc，AX 2026-06-12 指示）
 - `room.create` / `room.get` / `room.act`（join/start/bid 三个 action 先行）：Zod 校验移植、openid 身份、dice-rng、version-CAS（**start 基于服务端读的 version + stale 自动重试 ≤4 — web 版教训**）
 - `cron.cleanup` 定时触发器（清 >24h 房间）
 - **Verify**: 云函数本地测试（`tcb fn` 或 vitest 注入 fake db）跑通 create→join×2→start→bid 序列；并发 bid 模拟 CAS 冲突只允许一个提交
@@ -47,7 +48,7 @@
 - pages/index：昵称+头像（官方填写能力）、创建/加入房间
 - pages/room：lobby（成员列表/规则抽屉/开始）+ bidding（PlayerRing/BidPanel/BidChain）+ reveal（RevealStage + 手牌揭晓）+ game_end（rematch/离开）
 - **设计 §5.5 交互状态表全量实现**：卡片直达首次进房昵称 sheet、join 失败三态全屏页（过期/满员/已开打）、出局观战横幅、断线 staleness 横幅
-- 主题 tokens 移植（CSS 变量注入 page 根节点）；摇骰子 + 震动 + **摇骰音效**（`wx.createInnerAudioContext` 单实例，资产 `assets/audio/dice-shake.mp3` 已入库，license 见 `assets/audio/README.md`；automator 验不了音频 → 真机人耳验证归 WXAPP-7）
+- UI 按设计 §5.1 原则实现：简洁大方可读性优先（**不移植 web 主题**，AX 2026-06-12 指示）；dark/light 双模式（`darkmode: true` + theme.json + 手动覆盖开关）；摇骰子 + 震动 + **摇骰音效**（`wx.createInnerAudioContext` 单实例，资产 `assets/audio/dice-shake.mp3` 已入库，license 见 `assets/audio/README.md`；automator 验不了音频 → 真机人耳验证归 WXAPP-7）
 - **Verify**: 2 人全程：创建→分享码加入→start→若干轮 bid→开→淘汰（淘汰者见观战横幅）→game_end→rematch 二局 —— automator 冒烟脚本跑通（对齐 web 版 audit harness 思路：**真的把一整局玩完**，game-end softlock 教训）；外加 join 三态各触发一次（假码/满房/中途进）
 
 ## WXAPP-5: 完整规则
@@ -60,6 +61,7 @@
 
 - `onShareAppMessage`：title "来玩大话骰 · 房间XXXX 等你" + 5:4 主题卡图 + path 带 code；onLoad 自动 join
 - `getunlimitedqrcode`（trial）永久小程序码生成脚本（群公告用）
+- 首页「我的战绩」卡片：`room.stats` 读自己的 StatsDoc，以微信昵称头像展示（设计 §3/§5.1）
 - 动态消息（"X/Y 人已加入"）—— 可选，时间盒 1 天，不顺就砍
 - **Verify**: 真机×2（体验成员）：A 群里发卡片 → B 点卡片直接落进房间并自动入座；另用一个**非成员**微信号点卡片，确认微信系统拦截页符合预期并把该行为写进 README 成员 SOP（"这不是 bug"）
 

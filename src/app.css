@@ -4,4 +4,4 @@
 /* 模板扫描路径：原子类从这些文件收集 */
 @source "./**/*.{tsx,ts}";
 
-/* 主题 tokens：WXAPP-4 从 web 版 components/theme/tokens.ts 移植到这里（@theme + CSS 变量） */
+/* 设计 tokens：WXAPP-4 按设计契约 §5.1 落地 —— 简洁中性 + 单强调色，dark/light 双套 CSS 变量（不移植 web 主题） */

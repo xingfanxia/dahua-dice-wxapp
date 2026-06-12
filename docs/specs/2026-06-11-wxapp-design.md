@@ -64,6 +64,15 @@ interface RoomDoc {
 }
 // collection: hands — _openid 自动字段 = 拥有者; owner-only read 安全规则
 interface HandDoc { roomCode: string; round: number; dice: number[] }
+
+// collection: stats — _id = openid，玩家战绩（AX 2026-06-12 指示：统计挂微信身份）
+// 仅 room 云函数在 game_end 解算时写入（单写入口不破例）；安全规则 owner-only read
+interface StatsDoc {
+  nick: string; avatarUrl: string        // 冗余最近一次微信资料，便于展示
+  gamesPlayed: number; wins: number
+  challengesWon: number; challengesLost: number   // 开/劈/通杀的胜负归并计数
+  lastPlayedAt: Date
+}
 ```
 
 - TTL 替代（云数据库无 Redis TTL）：`updatedAt` + 云函数定时触发器（每日）清理 >24h 的 rooms/hands。
@@ -77,6 +86,7 @@ interface HandDoc { roomCode: string; round: number; dice: number[] }
 | `room.get` | GET /api/room/[code]/full | 轮询兜底 + 进房快照（剥离未揭晓 outcome.hands — 防御性，正常时本就没有） |
 | `room.act` {action} | POST /api/action | join/start/bid/challenge/pi/tongsha/nextRound/leave/setAvatar/updateRules/rematch — Zod 校验复用 `lib/validation/schemas.ts`（去掉 token 字段），引擎 `round.ts` 解算，CAS 提交 |
 | `room.hand` | GET /api/hand/[code] | 可选 —— 客户端可直接安全规则读 hands；保留函数形态以备规则不够用 |
+| `room.stats` | （web 版无此功能） | 读自己的 StatsDoc（openid 即 key）；写入发生在 act 的 game_end 解算内，不单独开写口 |
 | `cron.cleanup` | （Redis TTL） | 定时触发器清过期房间 |
 
 不移植：`/api/stream`（SSE→watch）、`/api/session`+`/api/whoami`（openid 替代）、`/api/health`、rate-limit（云函数有平台配额；体验版 31 人无滥用面 —— 砍掉，记录在案）。
@@ -85,13 +95,18 @@ interface HandDoc { roomCode: string; round: number; dice: number[] }
 
 ```
 pages/
-├─ index/        # 首页: 昵称+头像(官方填写能力) · 创建/加入 · 我的房间回跳
+├─ index/        # 首页: 昵称+头像(官方填写能力) · 创建/加入 · 我的房间回跳 · 我的战绩卡片
 └─ room/         # 大厅+游戏 (phase 驱动, 对应 web 版 RoomClient)
-components/      # 从 web 版移植 (div→View/Text, className 保留 tailwind)
-├─ dice/         # Dice2D + dice2d.css (keyframes/transform 直接可用; oklch→构建期降级)
-├─ game/         # BidPanel / PlayerRing / BidChain / RevealStage / AvatarBadge
-└─ theme/        # tokens.ts 原样 + ThemeProvider 改 CSS 变量注入 (page 根节点 style)
+components/      # 结构/逻辑从 web 版移植 (div→View/Text)，视觉按本 repo 设计原则重做
+├─ dice/         # Dice2D 动画结构移植 (keyframes/transform 直接可用)
+└─ game/         # BidPanel / PlayerRing / BidChain / RevealStage / AvatarBadge
 ```
+
+### 5.1 UI 设计原则（AX 2026-06-12 指示，覆盖原"移植 web 主题"方案）
+
+- **简洁大方、可读性优先**——不移植 web 版四主题/字体体系，不追求 web 版 aesthetic。中性底色 + 单一强调色，大字号、高对比。
+- **dark / light 双模式**：weapp 原生 `darkmode: true` + `theme.json`（导航栏/背景跟随系统），页面内用 CSS 变量双套取值；设置处给一个手动覆盖开关（跟随系统/浅色/深色，存 storage）。tailwind 的 dark: variant 由根节点 class 驱动，与覆盖开关联动。
+- 微信身份贯穿：进房用微信昵称头像（官方填写能力，资料预填），战绩按 openid 累计、以本人微信资料展示（见 §3 StatsDoc）。
 
 - **入房即玩的分享流**：`onShareAppMessage` → `path: 'pages/room/index?code=XXXX'`，卡片 title "来玩大话骰 · 房间XXXX 等你"，imageUrl 5:4 主题图。接收方（体验成员）点卡片 → `onLoad` 拿 code → 自动 join。**这是本项目存在的理由，最高优先级打磨。**
 - **首次进房 journey（卡片直达，绕过首页）**：room 页 onLoad 时本地无昵称 → 底部半屏 sheet（昵称填写 + 官方头像选择 + 单按钮"进入房间"），填完即 join —— 不弹回首页（断链会杀死分享流的全部价值）。昵称/头像存 storage，二次进房静默 join。

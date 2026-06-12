@@ -29,10 +29,10 @@
 | 层 | 选型 |
 |---|---|
 | 框架 | Taro 4.x + **React 18** + TypeScript |
-| 样式 | weapp-tailwindcss v4 + postcss-preset-env（主题 tokens 从 web 版移植，CSS 变量注入 page 根） |
+| 样式 | weapp-tailwindcss v5（tailwind v4）+ postcss-preset-env（oklch 降级）。**UI 简洁大方可读性优先，不照搬 web 版 aesthetic**（AX 2026-06-12）；dark/light 双模式（`darkmode:true` + theme.json + 手动开关） |
 | 后端 | 微信云开发：云函数（`room.create/get/act` + `cron.cleanup`）+ 云数据库（`rooms`/`hands`） |
 | 实时 | `db.watch` + 3s poll 双通道 |
-| 身份 | `wx.login` → 云函数 `getWXContext().OPENID`（无 session 层）；昵称头像用官方填写能力（getUserProfile 已废） |
+| 身份 | `wx.login` → 云函数 `getWXContext().OPENID`（无 session 层）；昵称头像用官方填写能力（getUserProfile 已废）；战绩 `stats` 集合按 openid 累计、以微信资料展示 |
 | 分享 | `onShareAppMessage` path 带房间码 → onLoad 自动 join；永久体验版码 `getunlimitedqrcode`(trial) |
 | 引擎 | 复制自 web 版 `lib/game-engine/`（types/validate/round + 单测），vitest |
 | 音效 | 仅摇骰子单音效：`wx.createInnerAudioContext` 单实例（`assets/audio/dice-shake.mp3`，CC0，来源见 `assets/audio/README.md`）；BGM/其余 SFX 砍掉 |
@@ -55,7 +55,7 @@ cloudfunctions/
 src/
 ├─ pages/index/    # 首页：昵称头像 + 创建/加入
 ├─ pages/room/     # lobby + game（phase 驱动，对应 web 版 RoomClient）
-├─ components/     # dice/ game/ theme/（从 web 版移植）
+├─ components/     # dice/ game/（结构从 web 版移植，视觉按 §5.1 简洁原则重做）
 └─ hooks/          # useRoomSync（watch+poll 双通道）
 assets/
 └─ audio/          # 摇骰音效（dice-shake.mp3，CC0）+ README（来源/license）——已入库，WXAPP-4 接线
