@@ -30,7 +30,7 @@
 | 层 | 选型 |
 |---|---|
 | 框架 | Taro 4.x + **React 18** + TypeScript |
-| 样式 | weapp-tailwindcss v5（tailwind v4）+ postcss-preset-env（oklch 降级）。**UI 简洁大方可读性优先，不照搬 web 版 aesthetic**（AX 2026-06-12）；dark/light 双模式（`darkmode:true` + theme.json + 手动开关） |
+| 样式 | weapp-tailwindcss v5（tailwind v4）+ postcss-preset-env（oklch 降级）。**UI 简洁大方可读性优先**（AX 2026-06-12）；dark/light 双模式（`darkmode:true` + theme.json + 手动开关）。**web 版已于 2026-06-12 反向对齐本 repo 的设计语言**（dahua-dice PR #6 删四主题）——视觉改动两边对照着做：`lib/handSummary.ts` ↔ web `lib/game/hand-summary.ts` 保持同步，diceCount zod 上限两边同改 |
 | 后端 | 微信云开发：云函数（`room.create/get/act` + `cron.cleanup`）+ 云数据库（`rooms`/`hands`） |
 | 实时 | `db.watch` + 3s poll 双通道 |
 | 身份 | `wx.login` → 云函数 `getWXContext().OPENID`（无 session 层）；昵称头像用官方填写能力（getUserProfile 已废）；战绩 `stats` 集合按 openid 累计、以微信资料展示 |
