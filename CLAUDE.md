@@ -23,7 +23,7 @@
 9. **引擎不 fork**：`engine/` 与 web 版 `lib/game-engine/` 保持 diff=0，修 bug 双向同步并在两边 commit message 注明。
 10. **EnvId 显式写在代码/配置里**，不依赖 CLI 当前选中环境（cloudbase skill 守则）。
 11. **mp.weixin.qq.com 每 ≤3 个月登录一次**（闲置冻结，人肉日历提醒）。
-12. **微信开发者工具是单实例共享资源**：本机可能有多个 agent/项目同时用它（2026-06-12 实测撞过车）。跑 automator/CLI 前先确认没有别的会话在用；**永远不要 `cli quit`/pkill 整个 IDE**——那会杀掉其他项目的会话。冒烟跑不动时改为：报告占用、等待或询问，不要重启工具。
+12. **微信开发者工具是单实例共享资源**（2026-06-12 与另一 agent 实测撞车）。automator/生命周期操作前先 `bash scripts/ops/devtools-lock.sh acquire dahua-dice-wxapp`，完事 release；**永远不要 `cli quit`/pkill IDE**（杀掉所有项目的会话）。完整约定：`~/.claude/references/wechat-devtools-lock.md`。不碰 IDE 的工作（vitest/build/git/miniprogram-ci）无需锁，随便并行。
 
 ## Tech stack quick ref
 
