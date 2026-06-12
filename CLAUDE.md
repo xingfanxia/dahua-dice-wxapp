@@ -1,6 +1,6 @@
 # dahua-dice-wxapp — Project Instructions
 
-> 大话骰（Liar's Dice）的**微信小程序版**。web 版在 sibling repo `~/projects/side-projects/dahua-dice/`（Next.js + Vercel + Upstash，已上线 dahua-dice.vercel.app）。本 repo 当前状态：**WXAPP-0..7 agent 可做部分全部完成（2026-06-12）** —— 后端全 action+stats、双通道同步、全 UI（首页/房间全 phase + 三态 + 观战 + staleness + dark/light）、规则编辑器、分享闭环、65 测试绿。**剩余 = 人肉步骤**（ci 密钥→自动部署/上传、安全规则粘贴、真机双人验证），清单见 `docs/plans/2026-06-11-wxapp-plan.md` WXAPP-2 状态块。
+> 大话骰（Liar's Dice）的**微信小程序版**。web 版在 sibling repo `~/projects/side-projects/dahua-dice/`（Next.js + Vercel + Upstash，已上线 dahua-dice.vercel.app）。本 repo 当前状态：**已部署 + 体验版 0.1.0 已上传（2026-06-12）** —— room 云函数上线（全 action+stats+cleanup 自节流+懒建集合）、全 UI（在线对战 + 线下骰盅 solo + 战绩 + 分享进房 + dark/light）、68 测试绿。**剩余人肉**：mp 后台设体验版、qrcode 函数 IDE 首建、安全规则粘贴、真机双人验证 —— 见 plan WXAPP-7 状态块。
 
 ## Identity
 
@@ -52,9 +52,10 @@ pnpm deploy:fn    # miniprogram-ci 部署云函数（需 ~/.secrets/wechat-minip
 pnpm upload:trial # miniprogram-ci 上传体验版（同上）
 pnpm typecheck    # tsc --noEmit
 pnpm build:fn     # esbuild 打包 cloud-src/room → cloudfunctions/room/index.js（wx-server-sdk external）
-# ⚠ 云函数部署：微信侧环境对开发者工具 CLI deploy/inc-deploy 一律报 ResourceNotFound.Namespace
-#   （IDE 图形右键部署正常 —— 两者走不同内部 API）。自动化部署唯一可行路 = miniprogram-ci 密钥。
-#   过渡期：IDE 右键 cloudfunctions/<fn> →「上传并部署:云端安装依赖」；拿到密钥后此注释换成 ci 命令
+# 云函数部署/体验版上传走 miniprogram-ci（密钥 ~/.secrets/wechat-miniprogram-ci/naoma-dahua-dice/）。
+# ⚠ ci 只能"更新"已存在的云函数，创建新函数仍需 IDE 右键一次（room 已建好；qrcode 待建）。
+# ⚠ 开发者工具 CLI 的 cloud deploy 对微信侧环境恒报 ResourceNotFound.Namespace，别再试。
+# ⚠ 上传三坑已修：lru-cache hoist（packageExtensions）、:where() WXSS、可选链（browserslist）。
 ```
 
 ## File layout

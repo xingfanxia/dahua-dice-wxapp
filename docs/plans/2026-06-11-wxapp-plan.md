@@ -90,7 +90,8 @@
 
 ## WXAPP-7: 打磨 + 体验版发布
 
-> **状态：脚本就绪（2026-06-12）** — `scripts/ops/upload-trial.mjs` + `scripts/ops/deploy-fn-ci.mjs`（miniprogram-ci，等密钥即全自动）。真机双端整局 + 体验码发朋友 = 人肉验证。
+> **状态：✅ 已部署+已上传（2026-06-12）** — ci 密钥就位；room 云函数（全 action+stats+cleanup 自节流+懒建集合）已部署；**体验版 0.1.0 已上传**（820KB）。上传链路踩平三坑：miniprogram-ci 的 lru-cache v11 hoist 冲突（packageExtensions 钉 v5）、`:where()` WXSS 不支持（dark variant 改纯后代形式）、可选链上传校验不过（browserslist 收紧到微信目标）。
+> 剩余人肉：①mp 后台版本管理把 0.1.0 设为「体验版」（一次）②IDE 创建 qrcode 函数（一次，之后 ci 可更新）③集合安全规则粘贴（设计 §3）④体验成员 + 真机双人验证。
 
 
 - Dice2D 动画移植/简化、加载/错误态、断线横幅（staleness 驱动，非 watch 状态 —— web 版教训）

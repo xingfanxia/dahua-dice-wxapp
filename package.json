@@ -25,8 +25,9 @@
     "upload:trial": "node scripts/ops/upload-trial.mjs"
   },
   "browserslist": [
-    "defaults and fully supports es6-module",
-    "maintained node versions"
+    "last 3 versions",
+    "Android >= 4.1",
+    "ios >= 8"
   ],
   "author": "",
   "dependencies": {
@@ -79,5 +80,17 @@
     "weapp-tailwindcss": "^5.0.7",
     "webpack": "5.91.0",
     "zod": "^4.4.3"
+  },
+  "pnpm": {
+    "overrides": {
+      "@babel/helper-compilation-targets>lru-cache": "5.1.1"
+    },
+    "packageExtensions": {
+      "miniprogram-ci": {
+        "dependencies": {
+          "lru-cache": "^5.1.1"
+        }
+      }
+    }
   }
 }

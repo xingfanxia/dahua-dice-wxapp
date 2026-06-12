@@ -33,7 +33,8 @@ const result = await ci.upload({
   project,
   version,
   desc,
-  setting: { es6: false, minify: true },
+  // 全关 ci 二次编译：Taro 产物已 ES5+压缩；ci 内置 babel 有 lru-cache 版本冲突（pnpm hoist）
+  setting: { es6: false, es7: false, minify: false, minifyJS: false, minifyWXML: false, minifyWXSS: false, autoPrefixWXSS: false },
   onProgressUpdate: () => {},
 })
 console.log('upload OK', JSON.stringify(result.subPackageInfo ?? result, null, 2))

@@ -4,5 +4,7 @@
 /* 模板扫描路径：原子类从这些文件收集 */
 @source "./**/*.{tsx,ts}";
 
-/* dark 模式：页面根 View 挂 .dark class（useThemeMode 驱动），dark: variant 据此生效（设计 §5.1） */
-@custom-variant dark (&:where(.dark, .dark *));
+/* dark 模式：页面根 View 挂 .dark class（useThemeMode 驱动），dark: variant 据此生效（设计 §5.1）。
+   纯后代形式（.dark &）—— 默认的 :where(.dark, .dark *) 形式 WXSS 不认（上传编译器在逗号处报错）；
+   约束：dark: 类永远写在 .dark 包裹节点的后代上，不写在同一节点（当前所有页面都满足）。 */
+@custom-variant dark (.dark &);
