@@ -6,7 +6,9 @@
 
 - **Path**: `~/projects/side-projects/dahua-dice-wxapp/`（与 web 版 pair 平级，见 `~/projects/CLAUDE.md` pair 约定）
 - **定位**: friends-only 非商用，**体验版分发**（个人主体 15 体验成员 + 15 项目成员 ≈ 31 人）
-- **AppID / 云开发 EnvId**: 未注册（WXAPP-0 步骤 1-2 产出后填到这里）
+- **名称**: 闹麻大话骰（个人主体，类目：工具-备忘录）
+- **AppID**: `wx20a31f84ad3fc6fb`（2026-06-12 注册；AppSecret 已生成但**永不使用/存储**——云开发架构用不到）
+- **云开发 EnvId**: 未开通（开发者工具里开通后填这里）
 
 ## Critical rules（违反任意一条 = 项目根基崩塌）
 
