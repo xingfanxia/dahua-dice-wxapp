@@ -1,12 +1,6 @@
-/** 手牌点数统计行："3 ×2"；1 万能时非 1 点数标 "(+1的个数)"，全 1 手牌退回 "1 ×n"。 */
-export function summarizeHand(hand: number[], aceWild: boolean): string[] {
+/** 手牌点数统计行：每个点数计个数（含 1 —— 豹子加成玩家自己算，AX 反馈去掉 (+n) 标注）。 */
+export function summarizeHand(hand: number[]): string[] {
   const counts = new Map<number, number>()
   for (const f of hand) counts.set(f, (counts.get(f) ?? 0) + 1)
-  const ones = counts.get(1) ?? 0
-  const faces = [...counts.keys()].sort((a, b) => a - b)
-  if (aceWild && ones > 0) {
-    const rows = faces.filter((f) => f !== 1).map((f) => `${f} ×${counts.get(f)}(+${ones})`)
-    return rows.length > 0 ? rows : [`1 ×${ones}`]
-  }
-  return faces.map((f) => `${f} ×${counts.get(f)}`)
+  return [...counts.keys()].sort((a, b) => a - b).map((f) => `${f} ×${counts.get(f)}`)
 }

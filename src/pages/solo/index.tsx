@@ -32,7 +32,7 @@ export default function Solo() {
         </View>
 
         {hand ? (
-          <DiceRow hand={hand} round={rolls} aceWild />
+          <DiceRow hand={hand} round={rolls} />
         ) : (
           <View className='flex h-28 items-center justify-center rounded-2xl border border-dashed border-gray-300 dark:border-gray-600'>
             <Text className='text-sm text-gray-400'>点「摇骰子」或用力摇手机</Text>

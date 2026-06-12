@@ -1,7 +1,7 @@
 /**
  * 我的手牌区（WXAPP-7 摇骰动画简化版）：新一轮先滚 0.7s（🎲 tumble + 音效 + 震动），
  * 落定后 pop 出真实点数（动画纯装饰，骰子服务端 roll —— 铁律 4）。
- * 暗置/明置切换防偷看；自动按点数统计（万能 1 以 (+n) 标注，斋局由调用方关掉）。
+ * 暗置/明置切换防偷看；自动按点数统计（含 1 的纯计数，豹子加成玩家自己算）。
  */
 import { Text, View } from '@tarojs/components'
 import { useEffect, useRef, useState } from 'react'
@@ -12,7 +12,7 @@ import './DiceRow.scss'
 const DICE_GLYPHS = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅', '7', '8']
 const TUMBLE_MS = 700
 
-export function DiceRow({ hand, round, aceWild = false }: { hand: number[] | null; round: number; aceWild?: boolean }) {
+export function DiceRow({ hand, round }: { hand: number[] | null; round: number }) {
   const [covered, setCovered] = useState(false)
   const [tumbling, setTumbling] = useState(false)
   const lastRoundRef = useRef<number | null>(null)
@@ -61,7 +61,7 @@ export function DiceRow({ hand, round, aceWild = false }: { hand: number[] | nul
       {/* 点数统计（盖住/摇动时一并隐藏，防偷看） */}
       {!hidden && (
         <View className='flex flex-wrap items-center justify-center gap-2 px-3'>
-          {summarizeHand(hand, aceWild).map((row) => (
+          {summarizeHand(hand).map((row) => (
             <View key={row} className='rounded-lg bg-gray-100 px-2.5 py-1 dark:bg-gray-700'>
               <Text className='text-base font-medium text-gray-700 dark:text-gray-200'>{row}</Text>
             </View>

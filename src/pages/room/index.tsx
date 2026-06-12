@@ -219,7 +219,7 @@ export default function Room() {
           <PlayerRing state={state} myId={myId} />
           {state.phase === 'bidding' && <BidChain state={state} />}
           {me?.alive && state.phase !== 'game_end' && (
-            <DiceRow hand={hand} round={state.round} aceWild={state.rules.aceWild && !state.isZhaiRound} />
+            <DiceRow hand={hand} round={state.round} />
           )}
           {me && !me.alive && state.phase !== 'game_end' && (
             <View className='rounded-lg bg-gray-100 py-1.5 text-center dark:bg-gray-800'>
