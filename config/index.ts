@@ -53,6 +53,8 @@ export default defineConfig<'webpack5'>(async (merge, { command, mode }) => {
       },
       webpackChain(chain) {
         chain.resolve.plugin('tsconfig-paths').use(TsconfigPathsPlugin)
+        // engine/ 在 src/ 之外（与云函数共享、与 web 版 diff=0），手动纳入 babel 编译范围
+        chain.module.rule('script').include.add(path.resolve(__dirname, '../engine'))
         // weapp-tailwindcss v5（tailwind v4 模式）：cssEntries 指向 @import 入口
         chain.merge({
           plugin: {
