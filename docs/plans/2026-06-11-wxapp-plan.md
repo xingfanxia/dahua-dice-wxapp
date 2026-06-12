@@ -45,7 +45,7 @@
 - pages/index：昵称+头像（官方填写能力）、创建/加入房间
 - pages/room：lobby（成员列表/规则抽屉/开始）+ bidding（PlayerRing/BidPanel/BidChain）+ reveal（RevealStage + 手牌揭晓）+ game_end（rematch/离开）
 - **设计 §5.5 交互状态表全量实现**：卡片直达首次进房昵称 sheet、join 失败三态全屏页（过期/满员/已开打）、出局观战横幅、断线 staleness 横幅
-- 主题 tokens 移植（CSS 变量注入 page 根节点）；摇骰子 + 震动
+- 主题 tokens 移植（CSS 变量注入 page 根节点）；摇骰子 + 震动 + **摇骰音效**（`wx.createInnerAudioContext` 单实例，资产 `assets/audio/dice-shake.mp3` 已入库，license 见 `assets/audio/README.md`；automator 验不了音频 → 真机人耳验证归 WXAPP-7）
 - **Verify**: 2 人全程：创建→分享码加入→start→若干轮 bid→开→淘汰（淘汰者见观战横幅）→game_end→rematch 二局 —— automator 冒烟脚本跑通（对齐 web 版 audit harness 思路：**真的把一整局玩完**，game-end softlock 教训）；外加 join 三态各触发一次（假码/满房/中途进）
 
 ## WXAPP-5: 完整规则
@@ -65,11 +65,11 @@
 
 - Dice2D 动画移植/简化、加载/错误态、断线横幅（staleness 驱动，非 watch 状态 —— web 版教训）
 - `miniprogram-ci` 上传脚本 → 设为体验版；README 写成员管理 SOP
-- **Verify**: 真机 iPhone + Android 各完整玩一局；体验版二维码发给 ≥2 个朋友实测进房
+- **Verify**: 真机 iPhone + Android 各完整玩一局（含：摇骰音效双端可闻、iOS 静音键拨上后无声 —— `obeyMuteSwitch` 预期行为）；体验版二维码发给 ≥2 个朋友实测进房
 
 ## 明确砍掉（记录在案，避免未来 agent 误捡）
 
-- 音频（web 版默认关）、英文 i18n、solo 模式（web 版已有）、rate-limit（体验版 31 人无滥用面）、session 集合（openid 即身份）、群识别 getGroupEnterInfo（备用）
+- 音频系统（BGM/全套 SFX；web 版默认关）——**例外：摇骰子单音效保留**（资产 `assets/audio/`，WXAPP-4 接线）、英文 i18n、solo 模式（web 版已有）、rate-limit（体验版 31 人无滥用面）、session 集合（openid 即身份）、群识别 getGroupEnterInfo（备用）
 
 ## 跨阶段纪律
 

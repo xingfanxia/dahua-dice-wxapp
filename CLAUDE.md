@@ -33,6 +33,7 @@
 | 身份 | `wx.login` → 云函数 `getWXContext().OPENID`（无 session 层）；昵称头像用官方填写能力（getUserProfile 已废） |
 | 分享 | `onShareAppMessage` path 带房间码 → onLoad 自动 join；永久体验版码 `getunlimitedqrcode`(trial) |
 | 引擎 | 复制自 web 版 `lib/game-engine/`（types/validate/round + 单测），vitest |
+| 音效 | 仅摇骰子单音效：`wx.createInnerAudioContext` 单实例（`assets/audio/dice-shake.mp3`，CC0，来源见 `assets/audio/README.md`）；BGM/其余 SFX 砍掉 |
 | 测试 | vitest（引擎/云函数）+ miniprogram-automator 冒烟（本地，CI 不可用） |
 | 工具 | 微信开发者工具（需开服务端口）；上传走 `miniprogram-ci` 密钥 |
 
@@ -54,6 +55,8 @@ src/
 ├─ pages/room/     # lobby + game（phase 驱动，对应 web 版 RoomClient）
 ├─ components/     # dice/ game/ theme/（从 web 版移植）
 └─ hooks/          # useRoomSync（watch+poll 双通道）
+assets/
+└─ audio/          # 摇骰音效（dice-shake.mp3，CC0）+ README（来源/license）——已入库，WXAPP-4 接线
 docs/
 ├─ specs/2026-06-11-wxapp-design.md     # 设计契约（数据模型/云函数/页面/风险）
 ├─ plans/2026-06-11-wxapp-plan.md       # WXAPP-0..7 实施计划（含 prerequisites）

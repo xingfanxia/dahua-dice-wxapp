@@ -100,7 +100,7 @@ components/      # 从 web 版移植 (div→View/Text, className 保留 tailwind
 - **动态消息**（v1.1 可选）：分享卡片实时显示"X/Y 人已加入"。
 - 群识别（shareTicket + getGroupEnterInfo）：v1 不做，记录能力备用（同群战绩等）。
 - **出局观战态**（web 版血泪教训直接继承）：alive=false 的玩家停止读 hands（出局者无手牌，别让客户端空轮询）、中心区换 💀"你已出局 · 观战中"横幅、保留全部实时战况；game_end 时与活人同屏看结算 + rematch 自动满血回归。
-- 摇骰子：`wx.onDeviceMotionChange`（无权限弹窗）+ `wx.vibrateShort`。
+- 摇骰子：`wx.onDeviceMotionChange`（无权限弹窗）+ `wx.vibrateShort` + **摇骰音效**——`wx.createInnerAudioContext` 单实例复用（每次摇 `seek(0)` 重播，不重建实例），资产 `assets/audio/dice-shake.mp3`（CC0，来源/license 见 `assets/audio/README.md`）。`obeyMuteSwitch` 保持默认 true（跟随系统静音键，不做独立音效开关——全游戏只有这一个音效，开关不值得一个设置项）。
 
 ### 5.5 交互状态表（每格 = 用户所见，非后端行为）
 
@@ -115,7 +115,7 @@ components/      # 从 web 版移植 (div→View/Text, className 保留 tailwind
 | 断线 | — | — | staleness >10s → 顶部横幅"同步中断，重连中…"；>30s → 全屏遮罩 + "重新进入"按钮 | 横幅自动消失 | 由数据新鲜度驱动，非 watch 连接状态（铁律 6） |
 | game_end | — | — | rematch 失败 toast | 结算榜 + "再来一局"/"离开房间" | 离开≠解散（web 版文案教训） |
 - 移动端硬规格：safe-area 适配（`env(safe-area-inset-*)`，刘海/底部条机型）；触控目标 ≥44px、确认弹层防误触、`prefers-reduced-motion` 静态骰子 —— 全部继承 web 版 a11y 已有决策，不降级。
-- 音频：v1 砍掉（web 版本来默认关）。i18n：zh-CN 硬编码，文案直接抄 `messages/zh-CN.json`。
+- 音频：**仅保留摇骰子单音效**（见 §5.4 摇骰子条）；BGM 和其余 SFX 砍掉（web 版本来默认关）。i18n：zh-CN 硬编码，文案直接抄 `messages/zh-CN.json`。
 - solo 模式：v2 再说（web 版 /solo 已覆盖该场景）。
 
 ## 6. 体验版运维（产品的一部分）
