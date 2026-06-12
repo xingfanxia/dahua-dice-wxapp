@@ -13,12 +13,11 @@ import { rollDiceClient } from '@/lib/soloRoll'
 export default function Solo() {
   const { themeClass } = useThemeMode()
   const [count, setCount] = useState(5)
-  const [sides, setSides] = useState<6 | 8>(6)
   const [hand, setHand] = useState<number[] | null>(null)
   const [rolls, setRolls] = useState(0)
 
   function roll() {
-    setHand(rollDiceClient(count, sides))
+    setHand(rollDiceClient(count, 6))
     setRolls((r) => r + 1)
   }
 
@@ -33,7 +32,7 @@ export default function Solo() {
         </View>
 
         {hand ? (
-          <DiceRow hand={hand} round={rolls} />
+          <DiceRow hand={hand} round={rolls} aceWild />
         ) : (
           <View className='flex h-28 items-center justify-center rounded-2xl border border-dashed border-gray-300 dark:border-gray-600'>
             <Text className='text-sm text-gray-400'>点「摇骰子」或用力摇手机</Text>
@@ -44,34 +43,20 @@ export default function Solo() {
           <Text className='text-base font-medium text-white'>{hand ? '再摇一次' : '摇骰子'}</Text>
         </View>
 
-        <View className='flex flex-col gap-3 rounded-2xl bg-white p-4 dark:bg-gray-800'>
-          <View className='flex items-center justify-between'>
-            <Text className='text-sm text-gray-700 dark:text-gray-300'>骰子数量</Text>
-            <View className='flex gap-1.5'>
-              {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
-                <View
-                  key={n}
-                  className={`min-w-8 rounded-lg px-2 py-1 text-center ${count === n ? 'bg-red-500' : 'bg-gray-100 dark:bg-gray-700'}`}
-                  onClick={() => setCount(n)}
-                >
-                  <Text className={`text-sm ${count === n ? 'text-white' : 'text-gray-700 dark:text-gray-300'}`}>{n}</Text>
-                </View>
-              ))}
-            </View>
-          </View>
-          <View className='flex items-center justify-between'>
-            <Text className='text-sm text-gray-700 dark:text-gray-300'>骰子面数</Text>
-            <View className='flex gap-1.5'>
-              {([6, 8] as const).map((s) => (
-                <View
-                  key={s}
-                  className={`min-w-10 rounded-lg px-2.5 py-1 text-center ${sides === s ? 'bg-red-500' : 'bg-gray-100 dark:bg-gray-700'}`}
-                  onClick={() => setSides(s)}
-                >
-                  <Text className={`text-sm ${sides === s ? 'text-white' : 'text-gray-700 dark:text-gray-300'}`}>{s} 面</Text>
-                </View>
-              ))}
-            </View>
+        <View className='flex flex-col gap-2.5 rounded-2xl bg-white p-4 dark:bg-gray-800'>
+          <Text className='text-sm text-gray-700 dark:text-gray-300'>骰子数量</Text>
+          <View className='grid grid-cols-5 gap-2'>
+            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
+              <View
+                key={n}
+                className={`rounded-xl py-2.5 text-center ${count === n ? 'bg-red-500' : 'bg-gray-100 dark:bg-gray-700'}`}
+                onClick={() => setCount(n)}
+              >
+                <Text className={`text-base font-medium ${count === n ? 'text-white' : 'text-gray-700 dark:text-gray-300'}`}>
+                  {n}
+                </Text>
+              </View>
+            ))}
           </View>
         </View>
 
