@@ -1,0 +1,16 @@
+{
+  "miniprogramRoot": "./dist",
+  "projectname": "dahua-dice-wxapp",
+  "description": "闹麻大话骰 — 朋友聚会的摇骰子小工具",
+  "appid": "wx20a31f84ad3fc6fb",
+  "setting": {
+    "urlCheck": true,
+    "es6": false,
+    "enhance": false,
+    "compileHotReLoad": false,
+    "postcss": false,
+    "minified": false
+  },
+  "compileType": "miniprogram",
+  "cloudfunctionRoot": "cloudfunctions/"
+}

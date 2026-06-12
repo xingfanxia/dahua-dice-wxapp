@@ -11,3 +11,11 @@ coverage/
 project.private.config.json
 .env
 .env.*
+
+# Taro build
+dist/
+deploy_versions/
+.temp/
+.rn_temp/
+.swc
+*.local
