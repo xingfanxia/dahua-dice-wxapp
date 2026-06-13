@@ -11,7 +11,7 @@ function playOut(botCount: number, diceCount: number) {
   while (state.phase !== 'game_end' && guard++ < 2000) {
     if (state.phase === 'bidding') {
       const cur = state.players[state.currentTurnIdx];
-      const action = botAct(state, hands, cur.id);
+      const action = botAct(state, hands, cur.id, "medium");
       if (action.type === 'challenge') {
         state = challengeLocal(state, hands, cur.id);
       } else {
@@ -45,5 +45,27 @@ describe('localGame + bot self-play', () => {
     const { state, illegalBids } = playOut(3, 5);
     expect(state.phase).toBe('game_end');
     expect(illegalBids).toBe(0);
+  });
+});
+
+describe('bot difficulty', () => {
+  it('all three difficulties produce legal play to completion', () => {
+    for (const diff of ['easy', 'medium', 'hard'] as const) {
+      let { state, hands } = startLocal(createLocalGame(1, 4));
+      let guard = 0;
+      while (state.phase !== 'game_end' && guard++ < 2000) {
+        if (state.phase === 'bidding') {
+          const cur = state.players[state.currentTurnIdx];
+          const a = botAct(state, hands, cur.id, diff);
+          if (a.type === 'challenge') state = challengeLocal(state, hands, cur.id);
+          else state = placeBidLocal(state, cur.id, a.bid);
+        } else if (state.phase === 'reveal') {
+          const r = nextRoundLocal(state);
+          state = r.state;
+          hands = r.hands;
+        }
+      }
+      expect(state.phase).toBe('game_end');
+    }
   });
 });

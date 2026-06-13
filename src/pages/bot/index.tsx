@@ -11,7 +11,7 @@ import { BidPanel } from '@/components/game/BidPanel'
 import { PlayerRing } from '@/components/game/PlayerRing'
 import { RevealStage } from '@/components/game/RevealStage'
 import { useThemeMode } from '@/hooks/useThemeMode'
-import { botAct } from '@/lib/bot'
+import { type Difficulty, botAct } from '@/lib/bot'
 import {
   challengeLocal,
   createLocalGame,
@@ -26,12 +26,12 @@ const noop = () => {}
 
 export default function Bot() {
   const { themeClass } = useThemeMode()
-  const [botCount, setBotCount] = useState(2)
+  const [difficulty, setDifficulty] = useState<Difficulty>('medium')
   const [diceCount, setDiceCount] = useState(5)
   const [game, setGame] = useState<LocalGame | null>(null)
   const botTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const start = () => setGame(startLocal(createLocalGame(botCount, diceCount)))
+  const start = () => setGame(startLocal(createLocalGame(1, diceCount)))
 
   // 电脑回合驱动：到电脑出价时延时 ~1s 行动（拟人节奏）
   useEffect(() => {
@@ -40,7 +40,7 @@ export default function Bot() {
     if (!cur || cur.id === 'me') return
     if (botTimer.current) clearTimeout(botTimer.current)
     botTimer.current = setTimeout(() => {
-      const action = botAct(game.state, game.hands, cur.id)
+      const action = botAct(game.state, game.hands, cur.id, difficulty)
       if (action.type === 'challenge') {
         setGame((g) => (g ? { ...g, state: challengeLocal(g.state, g.hands, cur.id) } : g))
       } else {
@@ -48,7 +48,7 @@ export default function Bot() {
       }
     }, 900 + Math.floor(Math.random() * 700))
     return () => { if (botTimer.current) clearTimeout(botTimer.current) }
-  }, [game])
+  }, [game, difficulty])
 
   useEffect(() => () => { if (botTimer.current) clearTimeout(botTimer.current) }, [])
 
@@ -76,10 +76,23 @@ export default function Bot() {
   if (!game) {
     return shell(
       <View className='flex flex-1 flex-col gap-5 pt-6'>
-        <Picker label='电脑数量' options={[1, 2, 3]} value={botCount} onPick={setBotCount} />
+        <View className='flex flex-col gap-2 rounded-2xl bg-white p-4 dark:bg-gray-800'>
+          <Text className='text-sm text-gray-700 dark:text-gray-300'>难度</Text>
+          <View className='flex gap-2'>
+            {([['easy', '简单'], ['medium', '中等'], ['hard', '困难']] as const).map(([k, label]) => (
+              <View
+                key={k}
+                className={`flex-1 rounded-xl py-2.5 text-center ${difficulty === k ? 'bg-red-500' : 'bg-gray-100 dark:bg-gray-700'}`}
+                onClick={() => setDifficulty(k)}
+              >
+                <Text className={`text-base font-medium ${difficulty === k ? 'text-white' : 'text-gray-700 dark:text-gray-300'}`}>{label}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
         <Picker label='每人骰子数' options={[3, 4, 5]} value={diceCount} onPick={setDiceCount} />
         <View className='mt-2 rounded-2xl bg-red-500 py-4 text-center' onClick={start}>
-          <Text className='text-base font-medium text-white'>开始对战</Text>
+          <Text className='text-base font-medium text-white'>开始对战（1 个电脑）</Text>
         </View>
         <Text className='text-center text-xs text-gray-400'>规则：1 点万能（飞）· 叫数或开 · 输了减骰 · 淘汰制</Text>
       </View>,

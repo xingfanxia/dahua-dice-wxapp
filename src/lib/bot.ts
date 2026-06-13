@@ -8,6 +8,15 @@ import type { Bid, Face, RoomState } from '@/lib/game-engine/types'
 import type { Hands } from '@/lib/game-engine/round'
 
 export type BotAction = { type: 'bid'; bid: Bid } | { type: 'challenge' }
+export type Difficulty = 'easy' | 'medium' | 'hard'
+
+// 难度参数：noise=对期望的误判幅度（越大越蠢）；chMul=开牌倾向乘子（越小越容易硬撑被抓）；
+// bluff=低期望时仍敢大叫的概率（虚张）。
+const CFG: Record<Difficulty, { noise: number; chMul: number; bluff: number }> = {
+  easy: { noise: 1.3, chMul: 0.5, bluff: 0 },
+  medium: { noise: 0.5, chMul: 1.0, bluff: 0.06 },
+  hard: { noise: 0.15, chMul: 1.2, bluff: 0.14 },
+}
 
 /** 自己手牌里匹配某点数的个数（含万能 1）。 */
 function countOwn(hand: number[], face: number, wild: boolean): number {
@@ -29,17 +38,19 @@ function bestFace(hand: number[]): { face: Face; own: number } {
   return { face: face as Face, own: Math.max(0, own) }
 }
 
-export function botAct(state: RoomState, hands: Hands, botId: string): BotAction {
+export function botAct(state: RoomState, hands: Hands, botId: string, difficulty: Difficulty = 'medium'): BotAction {
+  const cfg = CFG[difficulty]
   const hand = hands[botId] ?? []
   const totalDice = state.players.reduce((s, p) => s + (p.alive ? p.diceLeft : 0), 0)
   const aliveCount = state.players.filter((p) => p.alive).length
   const others = Math.max(0, totalDice - hand.length)
+  const noise = () => (Math.random() * 2 - 1) * cfg.noise
 
   if (!state.lastBid) {
-    // 开局：以自己最多的点数起叫，叫数≈期望
+    // 开局：以自己最多的点数起叫，叫数≈期望（带难度噪声）
     const { face, own } = bestFace(hand)
     const p = state.rules.aceWild ? 2 / 6 : 1 / 6
-    const est = own + others * p
+    const est = own + others * p + noise()
     const floor = getStartingBidThreshold(aliveCount, false, state.rules, totalDice)
     const count = Math.min(totalDice, Math.max(floor, Math.round(est)))
     return { type: 'bid', bid: { count, face, isZhai: false } }
@@ -50,14 +61,16 @@ export function botAct(state: RoomState, hands: Hands, botId: string): BotAction
   const own = countOwn(hand, bid.face, wild)
   const p = wild ? 2 / 6 : 1 / 6
   const est = own + others * p // 期望总数
-  const slack = bid.count - est // >0 = 叫得偏高
+  const slack = bid.count - (est + noise()) // >0 = 叫得偏高（带误判）
 
-  // 叫得越离谱越倾向开；接近期望就加叫；偶尔虚张
-  const challengeProb = slack > 2 ? 0.92 : slack > 1 ? 0.55 : slack > 0 ? 0.2 : 0.04
-  if (bid.count >= totalDice || Math.random() < challengeProb) return { type: 'challenge' }
+  // 叫得越离谱越倾向开；接近期望就加叫；难度调节开牌倾向
+  const baseProb = slack > 2 ? 0.92 : slack > 1 ? 0.55 : slack > 0 ? 0.2 : 0.04
+  if (bid.count >= totalDice || Math.random() < baseProb * cfg.chMul) return { type: 'challenge' }
 
-  // 加叫：优先 count+1 同点，其次同 count 升点；都不行就开
+  // 加叫：通常 count+1 同点 / 同 count 升点；虚张时直接跳叫 +2
+  const bluffing = Math.random() < cfg.bluff
   const candidates: Bid[] = [
+    ...(bluffing ? [{ count: bid.count + 2, face: bid.face, isZhai: false }] : []),
     { count: bid.count + 1, face: bid.face, isZhai: false },
     ...(bid.face < state.rules.diceSides
       ? [{ count: bid.count, face: (bid.face + 1) as Face, isZhai: false }]

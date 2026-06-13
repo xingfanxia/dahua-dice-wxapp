@@ -6,7 +6,7 @@
  */
 import { Text, View } from '@tarojs/components'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { DiceFace } from './DiceFace'
+import { DiceCube } from './DiceCube'
 import { useShake } from '@/hooks/useShake'
 import { summarizeHand } from '@/lib/handSummary'
 import { playDiceSound, vibrate } from '@/lib/diceSound'
@@ -62,7 +62,7 @@ export function DiceRow({ hand, round }: { hand: number[] | null; round: number 
       >
         <View className='flex items-center justify-center gap-2'>
           {hand.map((_, i) => (
-            <DiceFace key={i} face={1} size={88} hidden />
+            <DiceCube key={i} face={1} size={92} hidden />
           ))}
         </View>
         <View className='flex items-center gap-1.5'>
@@ -81,10 +81,10 @@ export function DiceRow({ hand, round }: { hand: number[] | null; round: number 
     >
       <View className='flex flex-wrap items-center justify-center gap-2.5 px-3'>
         {hand.map((face, i) => (
-          <DiceFace
+          <DiceCube
             key={`${round}-${i}`}
             face={face}
-            size={110}
+            size={108}
             hidden={tumbling}
             className={tumbling ? 'dice-tumbling' : 'dice-revealed'}
             style={tumbling ? { animationDelay: `${i * 60}ms` } : undefined}

@@ -5,7 +5,7 @@
  */
 import { Text, View } from '@tarojs/components'
 import type { RoomState } from '@/lib/game-engine/types'
-import { DiceFace } from './DiceFace'
+import { DiceCube } from './DiceCube'
 
 export function CurrentBid({ state, myId }: { state: RoomState; myId: string | null }) {
   const turnNick = state.players[state.currentTurnIdx]?.nick ?? '?'
@@ -33,7 +33,7 @@ export function CurrentBid({ state, myId }: { state: RoomState; myId: string | n
       <View className='flex items-center gap-3'>
         <Text className='text-5xl font-bold text-gray-900 dark:text-gray-50'>{state.lastBid.count}</Text>
         <Text className='text-3xl text-gray-400'>×</Text>
-        <DiceFace face={state.lastBid.face} size={96} />
+        <DiceCube face={state.lastBid.face} size={92} />
         {state.lastBid.isZhai && (
           <View className='rounded-full bg-amber-200 px-2 py-1 dark:bg-amber-800'>
             <Text className='text-sm font-bold text-amber-700 dark:text-amber-100'>斋</Text>
