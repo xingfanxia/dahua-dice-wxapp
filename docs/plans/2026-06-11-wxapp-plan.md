@@ -98,6 +98,32 @@
 - `miniprogram-ci` 上传脚本 → 设为体验版；README 写成员管理 SOP
 - **Verify**: 真机 iPhone + Android 各完整玩一局（含：摇骰音效双端可闻、iOS 静音键拨上后无声 —— `obeyMuteSwitch` 预期行为）；体验版二维码发给 ≥2 个朋友实测进房
 
+## 玩家反馈 R3 批次（2026-06-12，11 项全部完成）
+
+体验版实测 11 项反馈，已全部修复并上传：
+
+| # | 反馈 | 处置 |
+|---|---|---|
+| 1 | 斋叫应能少叫 | 转斋折扣 prev−1（引擎，自 web 同步）+ BidPanel'斋可少叫一个'提示 |
+| 2 | 输了减骰子应可选 | `endMode` 四模式枚举 attrition/party/knockout/score（引擎自 web 同步）+ RulesEditor 选择器 |
+| 3 | 第二轮扔骰子卡住 | DiceRow tumble timer ref 化 + 手牌拉取同步认领 handRoundRef（双根因） |
+| 4 | UIUX 不直观 | CurrentBid hero + 回合 🎯 高亮 + '轮到你·叫数或开'指引 |
+| 5 | 重开/返回控制不清 | RoomHeader ← 返回 + game_end 大按钮 + 非房主'等房主再来'提示 |
+| 6 | 加人机模式 | pages/bot：1 个 AI + 简单/中等/困难三档启发式策略 |
+| 7 | 单机入口太小 | 首页改醒目卡片（人机 + 线下骰盅） |
+| 8 | 缺摇骰仪式感 | DiceRow 默认盖住，摇手机/点一下才 tumble 揭晓 |
+| 9 | 骰子像 emoji | DiceCube CSS 3D 立方体（手牌+hero）+ DiceFace 扁平真骰（小尺寸） |
+| 10 | 叫完界面塌陷 | WaitTurnCard 等待卡占位，行动区始终在 |
+| 11 | 对手叫骰不明显 | CurrentBid hero 大号 3D 骰 + ×数 + 叫家名 |
+
+### ⚠ 引擎协作约定（CRITICAL，防多 agent 漂移）
+
+web 版 `dahua-dice` 与本 repo **共享游戏引擎**（`engine/` ↔ web `lib/game-engine/`，diff=0 铁律 9）。
+**引擎的单点作者在 web 版**（另一 agent 维护）；本 repo **只从 web 同步、绝不独立改引擎语义**——
+否则两边 reason 名/折扣公式漂移（R3 就踩过：我先写 ceil/2，web 写 prev−1，最终以 web 为准同步）。
+同步命令：`cp ~/projects/side-projects/dahua-dice/lib/game-engine/{types,validate,round}.ts engine/ && cp .../tests/{round,validate}.test.ts tests/`，跑 `diff -r` 确认 diff=0。
+wxapp 侧只做：cloud zod/normalizeState 镜像 + UI 适配（RulesEditor/BidPanel/RevealStage 文案）。
+
 ## 明确砍掉（记录在案，避免未来 agent 误捡）
 
 - 音频系统（BGM/全套 SFX；web 版默认关）——**例外：摇骰子单音效保留**（资产 `assets/audio/`，WXAPP-4 接线）、英文 i18n、rate-limit（体验版 31 人无滥用面）、session 集合（openid 即身份）、群识别 getGroupEnterInfo（备用）

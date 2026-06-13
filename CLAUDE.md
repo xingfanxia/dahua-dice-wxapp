@@ -1,6 +1,6 @@
 # dahua-dice-wxapp — Project Instructions
 
-> 大话骰（Liar's Dice）的**微信小程序版**。web 版在 sibling repo `~/projects/side-projects/dahua-dice/`（Next.js + Vercel + Upstash，已上线 dahua-dice.vercel.app）。本 repo 当前状态：**已部署 + 体验版 0.1.0 已上传（2026-06-12）** —— room 云函数上线（全 action+stats+cleanup 自节流+懒建集合）、全 UI（在线对战 + 线下骰盅 solo + 战绩 + 分享进房 + dark/light）、68 测试绿。**剩余人肉**：mp 后台设体验版、qrcode 函数 IDE 首建、安全规则粘贴、真机双人验证 —— 见 plan WXAPP-7 状态块。
+> 大话骰（Liar's Dice）的**微信小程序版**。web 版在 sibling repo `~/projects/side-projects/dahua-dice/`（Next.js + Vercel + Upstash，已上线 dahua-dice.vercel.app）。本 repo 当前状态：**已部署 + 体验版迭代中（2026-06-12，R3 玩家反馈 11 项全修）** —— room 云函数上线（全 action+stats+cleanup 自节流+懒建集合）、全 UI（在线对战 + 线下骰盅 solo + 战绩 + 分享进房 + dark/light）、68 测试绿。**剩余人肉**：mp 后台设体验版、qrcode 函数 IDE 首建、安全规则粘贴、真机双人验证 —— 见 plan WXAPP-7 状态块。
 
 ## Identity
 
@@ -20,7 +20,7 @@
 6. **实时同步必须双通道**：`db.watch` 主 + 3s 轮询兜底（watch 无 SLA、偶发掉监听）。UI 以 `version` 单调递增去重。断线 UI 由数据 staleness 驱动，不由 watch 连接状态驱动（web 版教训）。
 7. **单写入口 + version-CAS**：所有 mutation 走 `room` 云函数；安全规则 deny client write；CAS 失败（`stats.updated===0`）重读重试 ≤4。**start 的 CAS 基于服务端自己读的 version，不是客户端送的**（web 版 TOCTOU 教训）。
 8. **手牌私密**：未揭晓手牌只存 `hands` 集合（owner-only 安全规则），永不进 `rooms` 文档（客户端 watch 它 = 透视挂）。
-9. **引擎不 fork**：`engine/` 与 web 版 `lib/game-engine/` 保持 diff=0，修 bug 双向同步并在两边 commit message 注明。
+9. **引擎不 fork + 单点作者在 web**：`engine/` 与 web 版 `lib/game-engine/` 保持 diff=0。**引擎语义改动由 web 版（另一 agent）作者，本 repo 只 `cp` 同步、绝不独立改引擎**（多 agent 漂移防线，R3 教训）。wxapp 侧只做 cloud zod/normalizeState 镜像 + UI 文案适配。
 10. **EnvId 显式写在代码/配置里**，不依赖 CLI 当前选中环境（cloudbase skill 守则）。
 11. **mp.weixin.qq.com 每 ≤3 个月登录一次**（闲置冻结，人肉日历提醒）。
 12. **微信开发者工具是单实例共享资源**（2026-06-12 与另一 agent 实测撞车）。automator/生命周期操作前先 `bash scripts/ops/devtools-lock.sh acquire dahua-dice-wxapp`，完事 release；**永远不要 `cli quit`/pkill IDE**（杀掉所有项目的会话）。完整约定：`~/.claude/references/wechat-devtools-lock.md`。不碰 IDE 的工作（vitest/build/git/miniprogram-ci）无需锁，随便并行。
