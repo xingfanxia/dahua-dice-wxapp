@@ -17,7 +17,7 @@ const REASON_TEXT: Record<string, string> = {
   invalid_face: '无效点数',
   count_exceeds_dice: '数量不能超过场上骰子总数',
   break_zhai_needs_2x: '破斋（飞）需 2 倍以上',
-  zhai_below_half: '转斋最少叫一半',
+  zhai_count_too_low: '转斋最多少叫一个',
   face_one_must_zhai: '叫 1 点必须斋叫',
   palifico_count_locked: 'Palifico 回合数量锁定，只能加点数',
   not_higher: '必须高于上家',
@@ -78,7 +78,7 @@ export function BidPanel({
   const countLocked = palifico && !!state.lastBid
 
   // 转斋少叫提示：从飞切斋时，count 最低可到 ceil(prev/2)
-  const zhaiFloor = state.lastBid && !state.lastBid.isZhai ? Math.ceil(state.lastBid.count / 2) : null
+  const zhaiFloor = state.lastBid && !state.lastBid.isZhai ? Math.max(1, state.lastBid.count - 1) : null
 
   const candidate: Bid = useMemo(() => ({ count, face, isZhai }), [count, face, isZhai])
   const validation = isValidBid(state.lastBid, candidate, rules, alivePlayers, { totalDice, palifico })
@@ -113,7 +113,7 @@ export function BidPanel({
         <View>
           <Text className='text-xs tracking-wide text-gray-400'>数量</Text>
           {isZhai && zhaiFloor != null && (
-            <Text className='block text-[20rpx] text-amber-600'>斋可少叫到 {zhaiFloor}</Text>
+            <Text className='block text-[20rpx] text-amber-600'>斋可少叫一个（到 {zhaiFloor}）</Text>
           )}
         </View>
         <View className='flex items-center gap-4'>
@@ -166,7 +166,7 @@ export function BidPanel({
             {isZhai && <Text className='text-xs text-white'>✓</Text>}
           </View>
           <Text className='text-sm text-gray-900 dark:text-gray-100'>
-            斋叫（1 点不算 · 可少叫）{face === 1 ? ' · 1 点必斋' : ''}
+            斋叫（1 点不算 · 可少叫一个）{face === 1 ? ' · 1 点必斋' : ''}
           </Text>
         </View>
       )}

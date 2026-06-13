@@ -213,28 +213,60 @@ function prevAliveIdx(players, from) {
   }
   return from;
 }
-function lossFor(state, n) {
-  return state.rules.loseDie === false ? 0 : n;
+function endModeOf(state) {
+  return state.rules.endMode ?? "attrition";
 }
-function applyLoss(players, idx, n) {
+function applyLoss(state, players, idx, diceLost) {
+  const mode = endModeOf(state);
   return players.map((p, i) => {
     if (i !== idx) return p;
-    const left = Math.max(0, p.diceLeft - n);
-    return { ...p, diceLeft: left, alive: left > 0 };
+    const lossCount = (p.lossCount ?? 0) + 1;
+    if (mode === "attrition") {
+      const left = Math.max(0, p.diceLeft - diceLost);
+      return { ...p, diceLeft: left, lossCount, alive: left > 0 };
+    }
+    if (mode === "knockout") {
+      const knocked = lossCount >= (state.rules.knockoutLosses ?? 3);
+      return { ...p, lossCount, alive: !knocked };
+    }
+    return { ...p, lossCount };
   });
+}
+function lowestLossIdx(players) {
+  let best = -1;
+  let min = Number.POSITIVE_INFINITY;
+  players.forEach((p, i) => {
+    const l = p.lossCount ?? 0;
+    if (l < min) {
+      min = l;
+      best = i;
+    }
+  });
+  return best;
 }
 function standingBidderId(state) {
   return state.bidChain.length ? state.bidChain[state.bidChain.length - 1].playerId : null;
 }
 function finalize(state, players, partial2) {
   var _a3;
-  const alive = aliveCount(players);
-  const gameEnded = alive <= 1;
+  const mode = endModeOf(state);
+  let gameEnded;
+  let winnerIdx;
+  if (mode === "party") {
+    gameEnded = false;
+    winnerIdx = -1;
+  } else if (mode === "score") {
+    gameEnded = state.round >= (state.rules.scoreRounds ?? 5);
+    winnerIdx = gameEnded ? lowestLossIdx(players) : -1;
+  } else {
+    gameEnded = aliveCount(players) <= 1;
+    winnerIdx = gameEnded ? lastAliveIdx(players) : -1;
+  }
   const outcome = {
     ...partial2,
     loserId: ((_a3 = players[partial2.loserIdx]) == null ? void 0 : _a3.id) ?? "",
     gameEnded,
-    winnerIdx: gameEnded ? lastAliveIdx(players) : -1
+    winnerIdx
   };
   return {
     ok: true,
@@ -264,7 +296,7 @@ function resolveChallenge(state, hands, challengerId) {
   const bidderId = standingBidderId(state);
   const bidderIdx = bidderId != null ? idxOf(state, bidderId) : prevAliveIdx(state.players, challengerIdx);
   const loserIdx = meets ? challengerIdx : bidderIdx;
-  const players = applyLoss(state.players, loserIdx, lossFor(state, 1));
+  const players = applyLoss(state, state.players, loserIdx, 1);
   return finalize(state, players, {
     kind: "challenge",
     actualCount,
@@ -299,7 +331,7 @@ function resolvePi(state, hands, splitterId, targetId) {
   const meets = actualCount >= tbid.count;
   const loserIdx = meets ? splitterIdx : targetIdx;
   const diceLost = meets && state.rules.chineseExtensions.fanpi ? 2 : 1;
-  const players = applyLoss(state.players, loserIdx, lossFor(state, diceLost));
+  const players = applyLoss(state, state.players, loserIdx, diceLost);
   return finalize(state, players, {
     kind: "pi",
     actualCount,
@@ -336,12 +368,12 @@ function resolveTongsha(state, hands, tongshaId) {
   let loserIdx;
   let diceLost;
   if (!meets) {
-    for (const id of chainBidderIds) players = applyLoss(players, idxOf(state, id), lossFor(state, 1));
+    for (const id of chainBidderIds) players = applyLoss(state, players, idxOf(state, id), 1);
     loserIds = chainBidderIds;
     loserIdx = idxOf(state, chainBidderIds[0]);
     diceLost = 1;
   } else {
-    players = applyLoss(players, tIdx, lossFor(state, 2));
+    players = applyLoss(state, players, tIdx, 2);
     loserIds = [tongshaId];
     loserIdx = tIdx;
     diceLost = 2;
@@ -410,7 +442,9 @@ var DEFAULT_RULES = {
   diceSides: 6,
   chineseExtensions: { pi: false, fanpi: false, tongsha: false },
   paliFicoVariant: false,
-  loseDie: true
+  endMode: "attrition",
+  knockoutLosses: 3,
+  scoreRounds: 5
 };
 
 // engine/validate.ts
@@ -446,8 +480,8 @@ function isValidBid(prev, next, rules, alivePlayers, opts) {
     return { ok: false, reason: "break_zhai_needs_2x" };
   }
   if (!prev.isZhai && next.isZhai) {
-    if (next.count >= Math.ceil(prev.count / 2)) return { ok: true };
-    return { ok: false, reason: "zhai_below_half" };
+    if (next.count >= prev.count - 1) return { ok: true };
+    return { ok: false, reason: "zhai_count_too_low" };
   }
   if (next.count > prev.count) return { ok: true };
   if (next.count === prev.count && next.face > prev.face) return { ok: true };
@@ -15063,8 +15097,10 @@ var gameRulesSchema = external_exports.object({
     tongsha: external_exports.boolean()
   }),
   paliFicoVariant: external_exports.boolean(),
-  // 旧客户端可能不送 loseDie → 缺省补 true（淘汰制），与引擎 `=== false` 判定一致
-  loseDie: external_exports.boolean().default(true)
+  // #2 结算模式（与 web 引擎一致）。旧客户端不送 → 缺省补 attrition。
+  endMode: external_exports.enum(["attrition", "party", "knockout", "score"]).default("attrition"),
+  knockoutLosses: external_exports.number().int().min(1).max(20).default(3),
+  scoreRounds: external_exports.number().int().min(1).max(50).default(5)
 });
 var actionSchema = external_exports.discriminatedUnion("type", [
   external_exports.object({
@@ -15164,8 +15200,16 @@ async function getStats(db2, openid) {
 var MAX_PLAYERS = 8;
 var CAS_RETRIES = 4;
 function normalizeState(state) {
+  var _a3, _b, _c;
   return {
     ...state,
+    rules: {
+      ...state.rules,
+      endMode: ((_a3 = state.rules) == null ? void 0 : _a3.endMode) ?? "attrition",
+      knockoutLosses: ((_b = state.rules) == null ? void 0 : _b.knockoutLosses) ?? 3,
+      scoreRounds: ((_c = state.rules) == null ? void 0 : _c.scoreRounds) ?? 5
+    },
+    players: state.players.map((p) => ({ ...p, lossCount: p.lossCount ?? 0 })),
     bidChain: Array.isArray(state.bidChain) ? state.bidChain : [],
     palificoActive: state.palificoActive ?? false,
     palificoBidderId: state.palificoBidderId ?? null,

@@ -32,10 +32,17 @@ export type ActionResult = {
 const MAX_PLAYERS = 8;
 const CAS_RETRIES = 4;
 
-/** web 版 normalizeState 的移植：兼容旧文档缺字段（文档库无 cjson {} 问题，但保持同一防御面） */
+/** web 版 normalizeState 的移植：兼容旧文档缺字段 + 回填 #2 endMode 规则与 lossCount。 */
 export function normalizeState<T extends RoomState>(state: T): T {
   return {
     ...state,
+    rules: {
+      ...state.rules,
+      endMode: state.rules?.endMode ?? 'attrition',
+      knockoutLosses: state.rules?.knockoutLosses ?? 3,
+      scoreRounds: state.rules?.scoreRounds ?? 5,
+    },
+    players: state.players.map((p) => ({ ...p, lossCount: p.lossCount ?? 0 })),
     bidChain: Array.isArray(state.bidChain) ? state.bidChain : [],
     palificoActive: state.palificoActive ?? false,
     palificoBidderId: state.palificoBidderId ?? null,

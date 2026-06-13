@@ -45,8 +45,10 @@ export const gameRulesSchema = z.object({
     tongsha: z.boolean(),
   }),
   paliFicoVariant: z.boolean(),
-  // 旧客户端可能不送 loseDie → 缺省补 true（淘汰制），与引擎 `=== false` 判定一致
-  loseDie: z.boolean().default(true),
+  // #2 结算模式（与 web 引擎一致）。旧客户端不送 → 缺省补 attrition。
+  endMode: z.enum(['attrition', 'party', 'knockout', 'score']).default('attrition'),
+  knockoutLosses: z.number().int().min(1).max(20).default(3),
+  scoreRounds: z.number().int().min(1).max(50).default(5),
 });
 
 export const actionSchema = z.discriminatedUnion('type', [

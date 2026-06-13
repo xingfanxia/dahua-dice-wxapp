@@ -20,6 +20,8 @@ import { callRoom, postAction, reasonText } from '@/lib/actions'
 import { getProfile, setProfile, uploadAvatar } from '@/lib/profile'
 import type { Bid, GameRules } from '@/lib/game-engine/types'
 
+const END_MODE_LABEL: Record<string, string> = { attrition: '淘汰制', party: '聚会版', knockout: '输N次淘汰', score: '计分制' }
+
 const STALE_BANNER_MS = 10_000
 const STALE_OVERLAY_MS = 30_000
 
@@ -418,7 +420,7 @@ function LobbyView({
           </View>
           <Text className='text-sm text-gray-700 dark:text-gray-300'>
             每人 {state.rules.diceCount} 颗 · {state.rules.aceWild ? '1点万能' : '1点不算'} ·{' '}
-            {state.rules.allowZhai ? '允许斋' : '禁斋'} · {state.rules.loseDie === false ? '聚会版(不淘汰)' : '淘汰制'}
+            {state.rules.allowZhai ? '允许斋' : '禁斋'} · {END_MODE_LABEL[state.rules.endMode ?? 'attrition']}
             {state.rules.chineseExtensions.pi ? ' · 劈' : ''}
             {state.rules.chineseExtensions.fanpi ? ' · 反劈' : ''}
             {state.rules.chineseExtensions.tongsha ? ' · 通杀' : ''}

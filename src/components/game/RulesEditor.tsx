@@ -54,12 +54,30 @@ export function RulesEditor({
       </View>
       <Toggle label='1 点万能（飞）' checked={draft.aceWild} onToggle={() => patch({ aceWild: !draft.aceWild })} />
       <Toggle label='允许斋（1 点不算）' checked={draft.allowZhai} onToggle={() => patch({ allowZhai: !draft.allowZhai })} />
-      <Toggle
-        label='失败减骰子（淘汰制）'
-        sub={draft.loseDie ? '输了减一颗，减光出局' : '聚会版：不减骰、不淘汰，只决出本轮输家'}
-        checked={draft.loseDie}
-        onToggle={() => patch({ loseDie: !draft.loseDie })}
-      />
+
+      {/* #2 结算方式 */}
+      <View className='flex flex-col gap-2'>
+        <Text className='text-sm text-gray-700 dark:text-gray-300'>结算方式</Text>
+        <View className='grid grid-cols-2 gap-2'>
+          {END_MODES.map((m) => (
+            <View
+              key={m.key}
+              className={`flex flex-col gap-0.5 rounded-xl px-2.5 py-2 ${draft.endMode === m.key ? 'bg-red-500' : 'bg-gray-100 dark:bg-gray-700'}`}
+              onClick={() => patch({ endMode: m.key })}
+            >
+              <Text className={`text-sm font-medium ${draft.endMode === m.key ? 'text-white' : 'text-gray-800 dark:text-gray-200'}`}>{m.label}</Text>
+              <Text className={`text-[20rpx] ${draft.endMode === m.key ? 'text-red-100' : 'text-gray-400'}`}>{m.sub}</Text>
+            </View>
+          ))}
+        </View>
+        {draft.endMode === 'knockout' && (
+          <Stepper label='输几次淘汰' value={draft.knockoutLosses} min={1} max={20} onChange={(v) => patch({ knockoutLosses: v })} />
+        )}
+        {draft.endMode === 'score' && (
+          <Stepper label='打满几轮' value={draft.scoreRounds} min={1} max={50} onChange={(v) => patch({ scoreRounds: v })} />
+        )}
+      </View>
+
       <Toggle label='劈（指叫骰链上任意一口）' checked={draft.chineseExtensions.pi} onToggle={() => patchExt({ pi: !draft.chineseExtensions.pi })} />
       <Toggle
         label='反劈'
@@ -88,6 +106,30 @@ export function RulesEditor({
 }
 
 
+
+const END_MODES: { key: GameRules['endMode']; label: string; sub: string }[] = [
+  { key: 'attrition', label: '淘汰制', sub: '输了减骰 · 剩1人胜' },
+  { key: 'party', label: '聚会版', sub: '不淘汰 · 输了喝一杯' },
+  { key: 'knockout', label: '输N次淘汰', sub: '累计输N次出局' },
+  { key: 'score', label: '计分制', sub: '打满K轮 · 输最少胜' },
+]
+
+function Stepper({ label, value, min, max, onChange }: { label: string; value: number; min: number; max: number; onChange: (v: number) => void }) {
+  return (
+    <View className='flex items-center justify-between rounded-xl bg-gray-50 px-3 py-2 dark:bg-gray-700'>
+      <Text className='text-sm text-gray-700 dark:text-gray-300'>{label}</Text>
+      <View className='flex items-center gap-3'>
+        <View className='flex h-8 w-8 items-center justify-center rounded-full bg-white dark:bg-gray-600' onClick={() => onChange(Math.max(min, value - 1))}>
+          <Text className='text-gray-900 dark:text-gray-100'>−</Text>
+        </View>
+        <Text className='min-w-8 text-center text-base font-bold text-gray-900 dark:text-gray-100'>{value}</Text>
+        <View className='flex h-8 w-8 items-center justify-center rounded-full bg-white dark:bg-gray-600' onClick={() => onChange(Math.min(max, value + 1))}>
+          <Text className='text-gray-900 dark:text-gray-100'>+</Text>
+        </View>
+      </View>
+    </View>
+  )
+}
 
 function Toggle({ label, sub, checked, onToggle }: { label: string; sub?: string; checked: boolean; onToggle: () => void }) {
   return (

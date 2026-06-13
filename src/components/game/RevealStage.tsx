@@ -1,4 +1,4 @@
-/** 揭晓舞台 —— 全员手牌 + 命中高亮（含万能 1）+ 输家/终局结果。loseDie=false 时文案改"喝一杯"。 */
+/** 揭晓舞台 —— 全员手牌 + 命中高亮（含万能 1）+ 输家/终局结果。endMode≠attrition 时文案改"喝一杯"。 */
 import { Text, View } from '@tarojs/components'
 import { useEffect, useState } from 'react'
 import type { RoomState } from '@/lib/game-engine/types'
@@ -31,7 +31,7 @@ export function RevealStage({
     .map((id) => state.players.find((p) => p.id === id)?.nick ?? '?')
     .join('、')
   const kindLabel = result?.kind === 'pi' ? '劈!' : result?.kind === 'tongsha' ? '通杀!' : '开'
-  const noElim = state.rules.loseDie === false
+  const noElim = (state.rules.endMode ?? 'attrition') !== 'attrition'
 
   return (
     <View className='flex flex-col gap-4'>
