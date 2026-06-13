@@ -90,7 +90,20 @@ export default function Bot() {
             ))}
           </View>
         </View>
-        <Picker label='每人骰子数' options={[3, 4, 5]} value={diceCount} onPick={setDiceCount} />
+        <View className='flex flex-col gap-2 rounded-2xl bg-white p-4 dark:bg-gray-800'>
+          <Text className='text-sm text-gray-700 dark:text-gray-300'>每人骰子数</Text>
+          <View className='grid grid-cols-4 gap-2'>
+            {[3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
+              <View
+                key={n}
+                className={`rounded-xl py-2.5 text-center ${diceCount === n ? 'bg-red-500' : 'bg-gray-100 dark:bg-gray-700'}`}
+                onClick={() => setDiceCount(n)}
+              >
+                <Text className={`text-base font-medium ${diceCount === n ? 'text-white' : 'text-gray-700 dark:text-gray-300'}`}>{n}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
         <View className='mt-2 rounded-2xl bg-red-500 py-4 text-center' onClick={start}>
           <Text className='text-base font-medium text-white'>开始对战（1 个电脑）</Text>
         </View>
@@ -176,24 +189,5 @@ export default function Bot() {
         </View>
       )}
     </>,
-  )
-}
-
-function Picker({ label, options, value, onPick }: { label: string; options: number[]; value: number; onPick: (v: number) => void }) {
-  return (
-    <View className='flex flex-col gap-2 rounded-2xl bg-white p-4 dark:bg-gray-800'>
-      <Text className='text-sm text-gray-700 dark:text-gray-300'>{label}</Text>
-      <View className='flex gap-2'>
-        {options.map((o) => (
-          <View
-            key={o}
-            className={`flex-1 rounded-xl py-2.5 text-center ${value === o ? 'bg-red-500' : 'bg-gray-100 dark:bg-gray-700'}`}
-            onClick={() => onPick(o)}
-          >
-            <Text className={`text-base font-medium ${value === o ? 'text-white' : 'text-gray-700 dark:text-gray-300'}`}>{o}</Text>
-          </View>
-        ))}
-      </View>
-    </View>
   )
 }
