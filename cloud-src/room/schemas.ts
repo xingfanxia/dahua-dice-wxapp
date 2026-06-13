@@ -45,6 +45,8 @@ export const gameRulesSchema = z.object({
     tongsha: z.boolean(),
   }),
   paliFicoVariant: z.boolean(),
+  // 旧客户端可能不送 loseDie → 缺省补 true（淘汰制），与引擎 `=== false` 判定一致
+  loseDie: z.boolean().default(true),
 });
 
 export const actionSchema = z.discriminatedUnion('type', [

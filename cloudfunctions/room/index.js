@@ -213,6 +213,9 @@ function prevAliveIdx(players, from) {
   }
   return from;
 }
+function lossFor(state, n) {
+  return state.rules.loseDie === false ? 0 : n;
+}
 function applyLoss(players, idx, n) {
   return players.map((p, i) => {
     if (i !== idx) return p;
@@ -261,7 +264,7 @@ function resolveChallenge(state, hands, challengerId) {
   const bidderId = standingBidderId(state);
   const bidderIdx = bidderId != null ? idxOf(state, bidderId) : prevAliveIdx(state.players, challengerIdx);
   const loserIdx = meets ? challengerIdx : bidderIdx;
-  const players = applyLoss(state.players, loserIdx, 1);
+  const players = applyLoss(state.players, loserIdx, lossFor(state, 1));
   return finalize(state, players, {
     kind: "challenge",
     actualCount,
@@ -296,7 +299,7 @@ function resolvePi(state, hands, splitterId, targetId) {
   const meets = actualCount >= tbid.count;
   const loserIdx = meets ? splitterIdx : targetIdx;
   const diceLost = meets && state.rules.chineseExtensions.fanpi ? 2 : 1;
-  const players = applyLoss(state.players, loserIdx, diceLost);
+  const players = applyLoss(state.players, loserIdx, lossFor(state, diceLost));
   return finalize(state, players, {
     kind: "pi",
     actualCount,
@@ -333,12 +336,12 @@ function resolveTongsha(state, hands, tongshaId) {
   let loserIdx;
   let diceLost;
   if (!meets) {
-    for (const id of chainBidderIds) players = applyLoss(players, idxOf(state, id), 1);
+    for (const id of chainBidderIds) players = applyLoss(players, idxOf(state, id), lossFor(state, 1));
     loserIds = chainBidderIds;
     loserIdx = idxOf(state, chainBidderIds[0]);
     diceLost = 1;
   } else {
-    players = applyLoss(players, tIdx, 2);
+    players = applyLoss(players, tIdx, lossFor(state, 2));
     loserIds = [tongshaId];
     loserIdx = tIdx;
     diceLost = 2;
@@ -406,7 +409,8 @@ var DEFAULT_RULES = {
   startingBidFactor: 1.5,
   diceSides: 6,
   chineseExtensions: { pi: false, fanpi: false, tongsha: false },
-  paliFicoVariant: false
+  paliFicoVariant: false,
+  loseDie: true
 };
 
 // engine/validate.ts
@@ -440,6 +444,10 @@ function isValidBid(prev, next, rules, alivePlayers, opts) {
   if (prev.isZhai && !next.isZhai) {
     if (next.count >= prev.count * 2) return { ok: true };
     return { ok: false, reason: "break_zhai_needs_2x" };
+  }
+  if (!prev.isZhai && next.isZhai) {
+    if (next.count >= Math.ceil(prev.count / 2)) return { ok: true };
+    return { ok: false, reason: "zhai_below_half" };
   }
   if (next.count > prev.count) return { ok: true };
   if (next.count === prev.count && next.face > prev.face) return { ok: true };
@@ -15054,7 +15062,9 @@ var gameRulesSchema = external_exports.object({
     fanpi: external_exports.boolean(),
     tongsha: external_exports.boolean()
   }),
-  paliFicoVariant: external_exports.boolean()
+  paliFicoVariant: external_exports.boolean(),
+  // 旧客户端可能不送 loseDie → 缺省补 true（淘汰制），与引擎 `=== false` 判定一致
+  loseDie: external_exports.boolean().default(true)
 });
 var actionSchema = external_exports.discriminatedUnion("type", [
   external_exports.object({

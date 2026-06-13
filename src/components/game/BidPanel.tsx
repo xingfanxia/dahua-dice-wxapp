@@ -1,22 +1,23 @@
 /**
- * 叫骰面板 —— 逻辑逐条移植自 web 版 BidPanel（视觉按 §5.1 简化，键盘操作不适用小程序砍掉）：
- * count 步进 / 点数宫格 / 斋勾选（叫1必斋）/ Palifico 数量锁 / isValidBid 实时校验 +
- * 中文错误提示 / 开二次确认防误触 / 劈目标选择（跳过上家与自己）/ 通杀（仅存在活着的对手叫骰者）。
+ * 叫骰面板 —— 逻辑移植自 web 版 BidPanel（视觉重做 + DiceFace + 斋少叫提示，#4 直观）：
+ * count 步进 / 点数宫格（真实骰子面）/ 斋勾选（叫1必斋 + 转斋可少叫到 ceil(prev/2)）/
+ * Palifico 数量锁 / isValidBid 实时校验 + 中文错误 / 开二次确认 / 劈目标 / 通杀。
+ * 当前叫由 CurrentBid hero 展示，这里不再重复"上家叫"。
  */
 import { Text, View } from '@tarojs/components'
 import { useMemo, useState } from 'react'
 import type { Bid, Face, Player, RoomState } from '@/lib/game-engine/types'
 import { getStartingBidThreshold, isValidBid } from '@/lib/game-engine/validate'
 import { AvatarBadge } from './AvatarBadge'
-
-const DICE_GLYPHS = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅', '7', '8']
+import { DiceFace } from './DiceFace'
 
 const REASON_TEXT: Record<string, string> = {
   zhai_disabled: '本桌禁斋',
   invalid_count: '数量必须为正整数',
   invalid_face: '无效点数',
   count_exceeds_dice: '数量不能超过场上骰子总数',
-  break_zhai_needs_2x: '破斋需 2 倍以上',
+  break_zhai_needs_2x: '破斋（飞）需 2 倍以上',
+  zhai_below_half: '转斋最少叫一半',
   face_one_must_zhai: '叫 1 点必须斋叫',
   palifico_count_locked: 'Palifico 回合数量锁定，只能加点数',
   not_higher: '必须高于上家',
@@ -45,7 +46,6 @@ export function BidPanel({
   const meId = state.players[state.currentTurnIdx]?.id ?? null
   const standingOwner = chain.length ? chain[chain.length - 1].playerId : null
 
-  // 劈：可劈任何「活着、在链上、非上家、非自己」的叫骰者
   const piTargets: Player[] =
     rules.chineseExtensions.pi && state.lastBid
       ? [...new Set(chain.map((e) => e.playerId))]
@@ -74,9 +74,11 @@ export function BidPanel({
   const [piOpen, setPiOpen] = useState(false)
   const [challengePending, setChallengePending] = useState(false)
 
-  // 叫1必斋（非 Palifico）；Palifico 回合 1 点本来就不万能
   const isZhai = palifico ? false : face === 1 ? true : zhaiChecked
   const countLocked = palifico && !!state.lastBid
+
+  // 转斋少叫提示：从飞切斋时，count 最低可到 ceil(prev/2)
+  const zhaiFloor = state.lastBid && !state.lastBid.isZhai ? Math.ceil(state.lastBid.count / 2) : null
 
   const candidate: Bid = useMemo(() => ({ count, face, isZhai }), [count, face, isZhai])
   const validation = isValidBid(state.lastBid, candidate, rules, alivePlayers, { totalDice, palifico })
@@ -87,6 +89,15 @@ export function BidPanel({
       : REASON_TEXT[validation.reason ?? ''] || '无效叫数'
     : null
 
+  // 切到斋时，若当前数还停在飞的默认值，自动降到斋下限以提示"可少叫"
+  function toggleZhai() {
+    const next = !zhaiChecked
+    setZhaiChecked(next)
+    if (next && zhaiFloor != null && count > zhaiFloor && count >= (state.lastBid?.count ?? 0)) {
+      setCount(zhaiFloor)
+    }
+  }
+
   return (
     <View className='flex flex-col gap-4 rounded-2xl bg-white p-4 dark:bg-gray-800'>
       {palifico && (
@@ -95,16 +106,16 @@ export function BidPanel({
         </Text>
       )}
 
-      {state.lastBid && (
-        <Text className='text-sm text-gray-500 dark:text-gray-400'>
-          上家叫: {state.lastBid.count} 个 {DICE_GLYPHS[state.lastBid.face - 1]}
-          {state.lastBid.isZhai ? ' · 斋' : ''}
-        </Text>
-      )}
+      <Text className='text-center text-sm font-medium text-red-500'>🎯 轮到你 · 叫数或开</Text>
 
       {/* 数量步进 */}
       <View className='flex items-center justify-between'>
-        <Text className='text-xs tracking-wide text-gray-400'>数量</Text>
+        <View>
+          <Text className='text-xs tracking-wide text-gray-400'>数量</Text>
+          {isZhai && zhaiFloor != null && (
+            <Text className='block text-[20rpx] text-amber-600'>斋可少叫到 {zhaiFloor}</Text>
+          )}
+        </View>
         <View className='flex items-center gap-4'>
           <View
             className={`flex h-11 w-11 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-700 ${countLocked ? 'opacity-30' : ''}`}
@@ -122,7 +133,7 @@ export function BidPanel({
         </View>
       </View>
 
-      {/* 点数宫格 */}
+      {/* 点数宫格（真实骰子面） */}
       <View className='flex flex-col gap-2'>
         <Text className='text-xs tracking-wide text-gray-400'>点数</Text>
         <View className='grid grid-cols-6 gap-2'>
@@ -137,9 +148,7 @@ export function BidPanel({
                 } ${disabled ? 'opacity-30' : ''}`}
                 onClick={() => !disabled && setFace(f)}
               >
-                <Text className={`text-2xl ${active ? 'text-white' : 'text-gray-900 dark:text-gray-100'}`}>
-                  {DICE_GLYPHS[f - 1]}
-                </Text>
+                <DiceFace face={f} size={56} />
               </View>
             )
           })}
@@ -148,7 +157,7 @@ export function BidPanel({
 
       {/* 斋 */}
       {rules.allowZhai && !palifico && (
-        <View className='flex items-center gap-2' onClick={() => face !== 1 && setZhaiChecked((z) => !z)}>
+        <View className='flex items-center gap-2' onClick={() => face !== 1 && toggleZhai()}>
           <View
             className={`flex h-5 w-5 items-center justify-center rounded border ${
               isZhai ? 'border-amber-500 bg-amber-500' : 'border-gray-300 dark:border-gray-600'
@@ -157,7 +166,7 @@ export function BidPanel({
             {isZhai && <Text className='text-xs text-white'>✓</Text>}
           </View>
           <Text className='text-sm text-gray-900 dark:text-gray-100'>
-            斋叫（1 点不算）{face === 1 ? ' · 1 点必斋' : ''}
+            斋叫（1 点不算 · 可少叫）{face === 1 ? ' · 1 点必斋' : ''}
           </Text>
         </View>
       )}
@@ -165,26 +174,28 @@ export function BidPanel({
       {/* 主操作 */}
       <View className='mt-1 flex gap-3'>
         <View
-          className={`flex-1 rounded-2xl py-3.5 text-center ${
-            busy || !validation.ok ? 'bg-emerald-600 opacity-40' : 'bg-emerald-600'
-          }`}
+          className={`flex-1 rounded-2xl bg-emerald-600 py-3.5 text-center ${busy || !validation.ok ? 'opacity-40' : ''}`}
           onClick={() => !busy && validation.ok && onBid(candidate)}
         >
-          <Text className='font-medium text-white'>
-            叫 {count} 个 {DICE_GLYPHS[face - 1]}
-          </Text>
+          <View className='flex items-center justify-center gap-1.5'>
+            <Text className='font-medium text-white'>叫 {count} ×</Text>
+            <DiceFace face={face} size={36} />
+            {isZhai && <Text className='font-medium text-white'>斋</Text>}
+          </View>
         </View>
         {state.lastBid && (
           <View
             className={`flex-1 rounded-2xl bg-red-500 py-3.5 text-center ${busy ? 'opacity-40' : ''}`}
             onClick={() => !busy && setChallengePending(true)}
           >
-            <Text className='font-medium text-white'>开</Text>
+            <Text className='font-medium text-white'>开（拆穿上家）</Text>
           </View>
         )}
       </View>
 
-      {/* 开确认（防误触，web 版继承） */}
+      {invalidText && <Text className='block text-center text-xs text-red-500'>{invalidText}</Text>}
+
+      {/* 开确认（防误触） */}
       {challengePending && state.lastBid && (
         <View className='flex items-center gap-2 rounded-2xl bg-red-50 p-3 dark:bg-red-950'>
           <Text className='flex-1 text-sm text-red-600 dark:text-red-300'>确定开牌？</Text>
@@ -247,8 +258,6 @@ export function BidPanel({
           </View>
         </View>
       )}
-
-      {invalidText && <Text className='block text-center text-xs text-red-500'>{invalidText}</Text>}
     </View>
   )
 }

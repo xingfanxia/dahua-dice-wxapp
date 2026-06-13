@@ -52,8 +52,14 @@ export function RulesEditor({
           ))}
         </View>
       </View>
-      <Toggle label='1 点万能' checked={draft.aceWild} onToggle={() => patch({ aceWild: !draft.aceWild })} />
+      <Toggle label='1 点万能（飞）' checked={draft.aceWild} onToggle={() => patch({ aceWild: !draft.aceWild })} />
       <Toggle label='允许斋（1 点不算）' checked={draft.allowZhai} onToggle={() => patch({ allowZhai: !draft.allowZhai })} />
+      <Toggle
+        label='失败减骰子（淘汰制）'
+        sub={draft.loseDie ? '输了减一颗，减光出局' : '聚会版：不减骰、不淘汰，只决出本轮输家'}
+        checked={draft.loseDie}
+        onToggle={() => patch({ loseDie: !draft.loseDie })}
+      />
       <Toggle label='劈（指叫骰链上任意一口）' checked={draft.chineseExtensions.pi} onToggle={() => patchExt({ pi: !draft.chineseExtensions.pi })} />
       <Toggle
         label='反劈'
@@ -83,11 +89,14 @@ export function RulesEditor({
 
 
 
-function Toggle({ label, checked, onToggle }: { label: string; checked: boolean; onToggle: () => void }) {
+function Toggle({ label, sub, checked, onToggle }: { label: string; sub?: string; checked: boolean; onToggle: () => void }) {
   return (
     <View className='flex items-center justify-between gap-3' onClick={onToggle}>
-      <Text className='flex-1 text-sm text-gray-700 dark:text-gray-300'>{label}</Text>
-      <View className={`h-7 w-12 rounded-full p-0.5 ${checked ? 'bg-emerald-500' : 'bg-gray-300 dark:bg-gray-600'}`}>
+      <View className='flex-1'>
+        <Text className='block text-sm text-gray-700 dark:text-gray-300'>{label}</Text>
+        {!!sub && <Text className='block text-xs text-gray-400'>{sub}</Text>}
+      </View>
+      <View className={`h-7 w-12 shrink-0 rounded-full p-0.5 ${checked ? 'bg-emerald-500' : 'bg-gray-300 dark:bg-gray-600'}`}>
         <View className={`h-6 w-6 rounded-full bg-white transition-transform ${checked ? 'translate-x-5' : ''}`} />
       </View>
     </View>

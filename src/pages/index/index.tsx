@@ -145,11 +145,25 @@ export default function Index() {
             </View>
           </View>
           {!!error && <Text className='block text-center text-sm text-red-500'>{error}</Text>}
+        </View>
+
+        {/* 其它玩法入口（醒目卡片，不再是小字链接） */}
+        <View className='flex gap-3'>
           <View
-            className='py-1 text-center'
+            className='flex flex-1 flex-col items-center gap-1 rounded-2xl bg-white py-4 dark:bg-gray-800'
+            onClick={() => Taro.navigateTo({ url: '/pages/bot/index' })}
+          >
+            <Text className='text-2xl'>🤖</Text>
+            <Text className='text-sm font-medium text-gray-900 dark:text-gray-100'>人机对战</Text>
+            <Text className='text-xs text-gray-400'>一个人也能玩</Text>
+          </View>
+          <View
+            className='flex flex-1 flex-col items-center gap-1 rounded-2xl bg-white py-4 dark:bg-gray-800'
             onClick={() => Taro.navigateTo({ url: '/pages/solo/index' })}
           >
-            <Text className='text-sm text-gray-400 underline'>线下 / 单机骰盅 →</Text>
+            <Text className='text-2xl'>🎲</Text>
+            <Text className='text-sm font-medium text-gray-900 dark:text-gray-100'>线下骰盅</Text>
+            <Text className='text-xs text-gray-400'>面对面 · 当骰盅用</Text>
           </View>
         </View>
 

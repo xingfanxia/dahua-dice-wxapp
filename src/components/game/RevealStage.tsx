@@ -1,10 +1,9 @@
-/** 揭晓舞台 —— 移植自 web 版 RevealStage：全员手牌 + 命中高亮（含万能 1）+ 输家/终局结果。 */
+/** 揭晓舞台 —— 全员手牌 + 命中高亮（含万能 1）+ 输家/终局结果。loseDie=false 时文案改"喝一杯"。 */
 import { Text, View } from '@tarojs/components'
 import { useEffect, useState } from 'react'
 import type { RoomState } from '@/lib/game-engine/types'
 import { AvatarBadge } from './AvatarBadge'
-
-const DICE_GLYPHS = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅', '7', '8']
+import { DiceFace } from './DiceFace'
 
 export function RevealStage({
   state,
@@ -26,13 +25,13 @@ export function RevealStage({
   }
 
   const result = state.lastChallengeResult ?? null
-  // 劈时核对的是被劈目标的那口叫，不是最新叫（web 版语义）
   const verified = result?.verifiedBid ?? state.lastBid
   const wildCount = state.rules.aceWild && !verified.isZhai && !(state.palificoActive ?? false)
   const loserNames = (result?.loserIds ?? [])
     .map((id) => state.players.find((p) => p.id === id)?.nick ?? '?')
     .join('、')
   const kindLabel = result?.kind === 'pi' ? '劈!' : result?.kind === 'tongsha' ? '通杀!' : '开'
+  const noElim = state.rules.loseDie === false
 
   return (
     <View className='flex flex-col gap-4'>
@@ -57,16 +56,16 @@ export function RevealStage({
                   {!p.alive ? ' 💀' : ''}
                 </Text>
               </View>
-              <View className='flex gap-1'>
+              <View className='flex flex-wrap items-center justify-end gap-1'>
                 {hand.map((face, j) => {
                   const counted = face === verified.face || (face === 1 && wildCount)
                   return (
-                    <Text
+                    <DiceFace
                       key={`${p.id}-${j}`}
-                      className={`text-2xl ${counted ? 'text-amber-500' : 'text-gray-700 dark:text-gray-300'}`}
-                    >
-                      {DICE_GLYPHS[face - 1]}
-                    </Text>
+                      face={face}
+                      size={48}
+                      style={counted ? undefined : { opacity: 0.4 }}
+                    />
                   )
                 })}
               </View>
@@ -78,16 +77,25 @@ export function RevealStage({
       {showResult && result && (
         <View className='mt-1 flex flex-col items-center gap-1.5'>
           <Text className='text-sm tracking-wide text-amber-600'>{kindLabel}</Text>
-          <Text className='text-sm text-gray-900 dark:text-gray-100'>
-            叫: {verified.count} × {DICE_GLYPHS[verified.face - 1]} · 实际: {result.actualCount}
-            {wildCount ? '（含 1 点）' : ''}
-          </Text>
-          {!!loserNames && (
-            <Text className='text-base text-red-500'>
-              💀 {loserNames}{' '}
-              {result.loserIds.length === 1 && result.diceLost > 1 ? `输 ${result.diceLost} 颗骰` : '输一颗骰'}
+          <View className='flex items-center gap-2'>
+            <Text className='text-sm text-gray-900 dark:text-gray-100'>叫 {verified.count} ×</Text>
+            <DiceFace face={verified.face} size={40} />
+            <Text className='text-sm text-gray-900 dark:text-gray-100'>
+              · 实际 {result.actualCount}
+              {wildCount ? '（含 1 点）' : ''}
             </Text>
-          )}
+          </View>
+          {!!loserNames &&
+            (noElim ? (
+              <Text className='text-base text-red-500'>🍺 本轮 {loserNames} 输了 · 喝一杯！</Text>
+            ) : (
+              <Text className='text-base text-red-500'>
+                💀 {loserNames}{' '}
+                {result.loserIds.length === 1 && result.diceLost > 1
+                  ? `输 ${result.diceLost} 颗骰`
+                  : '输一颗骰'}
+              </Text>
+            ))}
           {result.gameEnded && result.winnerIdx >= 0 && (
             <Text className='mt-2 text-xl font-bold text-amber-500'>
               🏆 {state.players[result.winnerIdx]?.nick ?? '?'}

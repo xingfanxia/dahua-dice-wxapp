@@ -8,6 +8,7 @@ import Taro, { useRouter, useShareAppMessage } from '@tarojs/taro'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { BidChain } from '@/components/game/BidChain'
 import { BidPanel } from '@/components/game/BidPanel'
+import { CurrentBid } from '@/components/game/CurrentBid'
 import { DiceRow } from '@/components/game/DiceRow'
 import { PlayerRing } from '@/components/game/PlayerRing'
 import { RevealStage } from '@/components/game/RevealStage'
@@ -87,24 +88,31 @@ export default function Room() {
     if (code && getProfile()) void doJoin()
   }, [code])
 
-  // 我的手牌：round 变化拉取；出局停拉（web 版 404 轰炸教训）；round 标签防旧响应覆写
+  // 我的手牌：round 变化拉取；出局停拉（web 版 404 轰炸教训）；round 标签防旧响应覆写。
+  // handRoundRef 在 await 之前同步认领本轮 —— 第二轮状态 churn 会多次触发本 effect，
+  // 若认领写在 .then() 里会并发拉多次、多次 setHand 给新数组引用，连锁把 DiceRow 卡死
+  // （"第二轮扔骰子卡住"根因之二）。拉取失败则释放认领，下次 state 更新重试。
   const myId = join.kind === 'joined' ? join.playerId : null
   const me = state?.players.find((p) => p.id === myId)
   const [hand, setHand] = useState<number[] | null>(null)
-  const lastHandRoundRef = useRef(0)
+  const handRoundRef = useRef(0)
   useEffect(() => {
     if (!state || !myId) return
     if (state.phase !== 'bidding' && state.phase !== 'reveal') return
-    if (lastHandRoundRef.current === state.round) return
+    const round = state.round
+    if (handRoundRef.current === round) return
+    handRoundRef.current = round // 同步认领，封死并发重复拉取
     setHand(null)
     if (!me?.alive) return
-    const fetchedRound = state.round
-    fetchMyHand(code).then((d) => {
-      if (d.ok && d.round === fetchedRound && d.dice) {
-        lastHandRoundRef.current = fetchedRound
-        setHand(d.dice)
-      }
-    })
+    fetchMyHand(code)
+      .then((d) => {
+        if (handRoundRef.current !== round) return // 已被更新的一轮取代
+        if (d.ok && d.round === round && d.dice) setHand(d.dice)
+        else handRoundRef.current = 0 // 本轮手牌还没就位 → 释放，下次 sync 重试
+      })
+      .catch(() => {
+        if (handRoundRef.current === round) handRoundRef.current = 0
+      })
   }, [state, myId, me?.alive, code])
 
   const [busy, setBusy] = useState(false)
@@ -119,6 +127,11 @@ export default function Room() {
     },
     [sync.resync, flashMsg],
   )
+
+  const leaveAndHome = useCallback(async () => {
+    await act({ type: 'leave', code })
+    Taro.reLaunch({ url: '/pages/index/index' })
+  }, [act, code])
 
   // ---------- 渲染 ----------
 
@@ -140,7 +153,7 @@ export default function Room() {
     if (join.reason === 'game_in_progress' && state) {
       return shell(
         <>
-          <RoomHeader code={code} staleFor={staleFor} />
+          <RoomHeader code={code} staleFor={staleFor} onLeave={leaveAndHome} />
           <View className='rounded-xl bg-amber-100 px-3 py-2 dark:bg-amber-900'>
             <Text className='text-sm text-amber-700 dark:text-amber-200'>本局已开打 · 你在观战，等下一局自动可加入</Text>
           </View>
@@ -198,7 +211,7 @@ export default function Room() {
 
   return shell(
     <>
-      <RoomHeader code={code} staleFor={staleFor} />
+      <RoomHeader code={code} staleFor={staleFor} onLeave={leaveAndHome} />
       {!!flash && (
         <View className='rounded-lg bg-red-100 py-1.5 text-center dark:bg-red-950'>
           <Text className='text-xs text-red-600 dark:text-red-300'>{flash}</Text>
@@ -209,41 +222,45 @@ export default function Room() {
         <LobbyView state={state} myId={myId} isOwner={isOwner} busy={busy} code={code}
           onStart={() => act({ type: 'start', code })}
           onUpdateRules={(rules) => act({ type: 'updateRules', code, rules })}
-          onLeave={async () => {
-            await act({ type: 'leave', code })
-            Taro.reLaunch({ url: '/pages/index/index' })
-          }}
+          onLeave={leaveAndHome}
         />
       ) : (
         <>
           <PlayerRing state={state} myId={myId} />
-          {state.phase === 'bidding' && <BidChain state={state} />}
-          {me?.alive && state.phase !== 'game_end' && (
-            <DiceRow hand={hand} round={state.round} />
-          )}
-          {me && !me.alive && state.phase !== 'game_end' && (
-            <View className='rounded-lg bg-gray-100 py-1.5 text-center dark:bg-gray-800'>
-              <Text className='text-xs text-gray-500'>💀 你已出局 · 观战中</Text>
-            </View>
-          )}
 
-          {state.phase === 'bidding' &&
-            (isMyTurn ? (
-              <BidPanel
-                key={state.round}
-                state={state}
-                alivePlayers={alivePlayers}
-                busy={busy}
-                onBid={(bid: Bid) => act({ type: 'bid', code, ...bid, expectedVersion: state.version })}
-                onChallenge={() => act({ type: 'challenge', code, expectedVersion: state.version })}
-                onPi={(targetPlayerId) => act({ type: 'pi', code, targetPlayerId, expectedVersion: state.version })}
-                onTongsha={() => act({ type: 'tongsha', code, expectedVersion: state.version })}
-              />
-            ) : (
-              <Text className='block text-center text-sm text-gray-500'>
-                {state.players[state.currentTurnIdx]?.nick ?? '?'} 思考中…
-              </Text>
-            ))}
+          {state.phase === 'bidding' && (
+            <>
+              {/* 对手叫了什么 —— 最醒目（#11） */}
+              <CurrentBid state={state} myId={myId} />
+
+              {me?.alive ? (
+                <DiceRow hand={hand} round={state.round} />
+              ) : (
+                <View className='rounded-lg bg-gray-100 py-1.5 text-center dark:bg-gray-800'>
+                  <Text className='text-xs text-gray-500'>💀 你已出局 · 观战中</Text>
+                </View>
+              )}
+
+              {/* 行动区：我的回合给面板，否则给等待卡 —— 始终占位，叫完不塌陷（#10） */}
+              {me?.alive &&
+                (isMyTurn ? (
+                  <BidPanel
+                    key={state.round}
+                    state={state}
+                    alivePlayers={alivePlayers}
+                    busy={busy}
+                    onBid={(bid: Bid) => act({ type: 'bid', code, ...bid, expectedVersion: state.version })}
+                    onChallenge={() => act({ type: 'challenge', code, expectedVersion: state.version })}
+                    onPi={(targetPlayerId) => act({ type: 'pi', code, targetPlayerId, expectedVersion: state.version })}
+                    onTongsha={() => act({ type: 'tongsha', code, expectedVersion: state.version })}
+                  />
+                ) : (
+                  <WaitTurnCard state={state} myId={myId} />
+                ))}
+
+              <BidChain state={state} />
+            </>
+          )}
 
           {state.phase === 'reveal' && (
             <>
@@ -251,11 +268,11 @@ export default function Room() {
               <RevealStage key={state.round} state={state} hands={state.revealedHands ?? null} myId={myId} />
               {state.lastChallengeResult && (
                 <View
-                  className={`rounded-2xl bg-red-500 py-3 text-center ${busy ? 'opacity-40' : ''}`}
+                  className={`rounded-2xl bg-red-500 py-3.5 text-center ${busy ? 'opacity-40' : ''}`}
                   onClick={() => !busy && act({ type: 'nextRound', code, expectedVersion: state.version })}
                 >
-                  <Text className='font-medium text-white'>
-                    {state.lastChallengeResult.gameEnded ? '查看最终结果' : '下一局'}
+                  <Text className='text-base font-medium text-white'>
+                    {state.lastChallengeResult.gameEnded ? '🏁 查看最终结果' : '▶ 下一局'}
                   </Text>
                 </View>
               )}
@@ -264,29 +281,30 @@ export default function Room() {
 
           {state.phase === 'game_end' && (
             <View className='mt-4 flex flex-col items-center gap-3'>
-              <Text className='text-xl font-bold text-gray-900 dark:text-gray-100'>游戏结束</Text>
+              <Text className='text-2xl font-bold text-gray-900 dark:text-gray-100'>游戏结束</Text>
               {state.lastChallengeResult && state.lastChallengeResult.winnerIdx >= 0 && (
-                <Text className='text-lg text-amber-500'>
-                  🏆 {state.players[state.lastChallengeResult.winnerIdx]?.nick ?? '?'}
+                <Text className='text-xl text-amber-500'>
+                  🏆 {state.players[state.lastChallengeResult.winnerIdx]?.nick ?? '?'} 获胜
                 </Text>
               )}
-              <View className='mt-2 flex w-full gap-3'>
-                {isOwner && (
+              <View className='mt-2 flex w-full flex-col gap-2.5'>
+                {isOwner ? (
                   <View
-                    className={`flex-1 rounded-2xl bg-red-500 py-3 text-center ${busy ? 'opacity-40' : ''}`}
+                    className={`rounded-2xl bg-red-500 py-3.5 text-center ${busy ? 'opacity-40' : ''}`}
                     onClick={() => !busy && act({ type: 'rematch', code })}
                   >
-                    <Text className='font-medium text-white'>再来一局</Text>
+                    <Text className='text-base font-medium text-white'>🔄 再来一局（同房间）</Text>
+                  </View>
+                ) : (
+                  <View className='rounded-2xl bg-gray-100 py-3.5 text-center dark:bg-gray-800'>
+                    <Text className='text-sm text-gray-500'>等房主点「再来一局」…</Text>
                   </View>
                 )}
                 <View
-                  className='flex-1 rounded-2xl bg-white py-3 text-center dark:bg-gray-800'
-                  onClick={async () => {
-                    await act({ type: 'leave', code })
-                    Taro.reLaunch({ url: '/pages/index/index' })
-                  }}
+                  className='rounded-2xl border border-gray-300 py-3 text-center dark:border-gray-600'
+                  onClick={leaveAndHome}
                 >
-                  <Text className='font-medium text-gray-500'>离开房间</Text>
+                  <Text className='text-base font-medium text-gray-600 dark:text-gray-300'>← 离开房间 · 回首页</Text>
                 </View>
               </View>
             </View>
@@ -299,11 +317,14 @@ export default function Room() {
 
 // ---------- 子视图 ----------
 
-function RoomHeader({ code, staleFor }: { code: string; staleFor: number }) {
+function RoomHeader({ code, staleFor, onLeave }: { code: string; staleFor: number; onLeave: () => void }) {
   return (
     <View className='flex flex-col gap-2'>
       <View className='flex items-center justify-between'>
-        <Text className='text-lg font-bold text-gray-900 dark:text-gray-100'>房间 {code}</Text>
+        <View className='flex items-center gap-2' onClick={onLeave}>
+          <Text className='text-sm text-gray-400'>←</Text>
+          <Text className='text-lg font-bold text-gray-900 dark:text-gray-100'>房间 {code}</Text>
+        </View>
         <Button openType='share' className='m-0 rounded-full bg-emerald-600 px-4 py-1 text-sm leading-6 text-white after:border-0'>
           邀请微信好友
         </Button>
@@ -312,6 +333,24 @@ function RoomHeader({ code, staleFor }: { code: string; staleFor: number }) {
         <View className='rounded-lg bg-amber-100 py-1.5 text-center dark:bg-amber-900'>
           <Text className='text-xs text-amber-700 dark:text-amber-200'>同步中断，重连中…</Text>
         </View>
+      )}
+    </View>
+  )
+}
+
+/** 等待对手行动卡 —— 占位与 BidPanel 相当，让"叫完界面塌陷"不再发生（#10）。 */
+function WaitTurnCard({ state, myId }: { state: NonNullable<ReturnType<typeof useRoomSyncCloud>['state']>; myId: string | null }) {
+  const turnNick = state.players[state.currentTurnIdx]?.nick ?? '?'
+  const chain = Array.isArray(state.bidChain) ? state.bidChain : []
+  const myLast = [...chain].reverse().find((e) => e.playerId === myId)
+  return (
+    <View className='flex flex-col items-center gap-2 rounded-2xl bg-white py-6 dark:bg-gray-800'>
+      <Text className='text-2xl'>⏳</Text>
+      <Text className='text-base font-medium text-gray-700 dark:text-gray-200'>等 {turnNick} 行动…</Text>
+      {myLast && (
+        <Text className='text-xs text-gray-400'>
+          你刚叫了 {myLast.bid.count} 个 {myLast.bid.face} 点{myLast.bid.isZhai ? '（斋）' : ''}
+        </Text>
       )}
     </View>
   )
@@ -378,8 +417,8 @@ function LobbyView({
             )}
           </View>
           <Text className='text-sm text-gray-700 dark:text-gray-300'>
-            每人 {state.rules.diceCount} 颗（{state.rules.diceSides} 面）· {state.rules.aceWild ? '1点万能' : '1点不算'} ·{' '}
-            {state.rules.allowZhai ? '允许斋' : '禁斋'}
+            每人 {state.rules.diceCount} 颗 · {state.rules.aceWild ? '1点万能' : '1点不算'} ·{' '}
+            {state.rules.allowZhai ? '允许斋' : '禁斋'} · {state.rules.loseDie === false ? '聚会版(不淘汰)' : '淘汰制'}
             {state.rules.chineseExtensions.pi ? ' · 劈' : ''}
             {state.rules.chineseExtensions.fanpi ? ' · 反劈' : ''}
             {state.rules.chineseExtensions.tongsha ? ' · 通杀' : ''}
