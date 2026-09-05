@@ -1,10 +1,10 @@
 # dahua-dice-wxapp — Project Instructions
 
-> 大话骰（Liar's Dice）的**微信小程序版**。web 版在 sibling repo `~/projects/side-projects/dahua-dice/`（Next.js + Vercel + Upstash，已上线 dahua-dice.vercel.app）。本 repo 当前状态：**已部署 + 体验版迭代中（2026-06-12，R3 玩家反馈 11 项全修）** —— room 云函数上线（全 action+stats+cleanup 自节流+懒建集合）、全 UI（在线对战 + 线下骰盅 solo + 战绩 + 分享进房 + dark/light）、68 测试绿。**剩余人肉**：mp 后台设体验版、qrcode 函数 IDE 首建、安全规则粘贴、真机双人验证 —— 见 plan WXAPP-7 状态块。
+> 大话骰（Liar's Dice）的**微信小程序版**。web 版在 sibling repo `~/projects/fun/dahua-dice/`（Next.js + Vercel + Upstash，已上线 dahua-dice.vercel.app）。本 repo 当前状态：**已部署 + 体验版迭代中（2026-06-12，R3 玩家反馈 11 项全修）** —— room 云函数上线（全 action+stats+cleanup 自节流+懒建集合）、全 UI（在线对战 + 线下骰盅 solo + 战绩 + 分享进房 + dark/light）、68 测试绿。**剩余人肉**：mp 后台设体验版、qrcode 函数 IDE 首建、安全规则粘贴、真机双人验证 —— 见 plan WXAPP-7 状态块。
 
 ## Identity
 
-- **Path**: `~/projects/side-projects/dahua-dice-wxapp/`（与 web 版 pair 平级，见 `~/projects/CLAUDE.md` pair 约定）
+- **Path**: `~/projects/fun/dahua-dice-wxapp/`（与 web 版平级，见 `~/projects/docs/agent/project-layout.md` sibling 约定）
 - **定位**: friends-only 非商用，**体验版分发**（个人主体 15 体验成员 + 15 项目成员 ≈ 31 人）
 - **名称**: 闹麻大话骰（个人主体，类目：工具-备忘录）
 - **AppID**: `wx20a31f84ad3fc6fb`（2026-06-12 注册；AppSecret 已生成但**永不使用/存储**——云开发架构用不到）
@@ -84,6 +84,6 @@ docs/
 - `docs/plans/2026-06-11-wxapp-plan.md` — 实施计划；**WXAPP-0 是人肉前置步骤清单（注册/开通/加成员），开工先看它**
 - `docs/research/2026-06-11-wechat-miniprogram-port.md` — 调研决策记录（架构映射、公开上架不可行性、open questions）
 - `docs/research/wechat-miniprogram-friends-only-playbook.md` — 合规 playbook 快照（canonical 维护版在 `~/.claude/references/wechat-miniprogram-friends-only.md`）
-- web 版规则契约：`~/projects/side-projects/dahua-dice/docs/specs/2026-05-21-dahua-dice-design.md` §10/§10B（中式扩展/Palifico 语义 —— 本 repo 不重复）
+- web 版规则契约：`~/projects/fun/dahua-dice/docs/specs/2026-05-21-dahua-dice-design.md` §10/§10B（中式扩展/Palifico 语义 —— 本 repo 不重复）
 - CloudBase skill：`.claude/skills/cloudbase`（vendor 在 `.agents/skills/cloudbase`，16 份参考文档，`Skill(cloudbase)` 调用）
 - 跨项目记忆：`~/.claude/projects/-Users-xingfanxia-projects/memory/reference_wechat_miniprogram_friends_only.md`
