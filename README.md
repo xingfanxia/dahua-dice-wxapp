@@ -17,7 +17,7 @@
 
 | 文档 | 内容 |
 |---|---|
-| [`CLAUDE.md`](CLAUDE.md) | 60 秒上手 + 11 条铁律（合规根基 + web 版移植教训） |
+| [`AGENTS.md`](AGENTS.md) | 60 秒上手 + 11 条铁律（合规根基 + web 版移植教训） |
 | [`docs/specs/2026-06-11-wxapp-design.md`](docs/specs/2026-06-11-wxapp-design.md) | 设计契约：架构/数据模型/云函数/页面/风险 |
 | [`docs/plans/2026-06-11-wxapp-plan.md`](docs/plans/2026-06-11-wxapp-plan.md) | WXAPP-0..7 实施计划（每阶段带 verify gate） |
 | [`docs/research/`](docs/research/) | 调研决策记录 + 合规 playbook 快照 |

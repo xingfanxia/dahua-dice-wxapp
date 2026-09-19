@@ -1,4 +1,4 @@
-// 云函数自动化部署（miniprogram-ci 路线 —— 开发者工具 CLI 对微信侧环境不可用，见 CLAUDE.md）。
+// 云函数自动化部署（miniprogram-ci 路线 —— 开发者工具 CLI 对微信侧环境不可用，见 AGENTS.md）。
 // 前置同 upload-trial.mjs（同一把上传密钥）。
 // 用法：pnpm build:fn && node scripts/ops/deploy-fn-ci.mjs [room cleanup qrcode]
 import { existsSync } from 'node:fs'
