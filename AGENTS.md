@@ -1,10 +1,18 @@
-# dahua-dice-wxapp — Project Instructions
+# dahua-dice-wxapp — agent guide
+
+## Project scale and verification
+
+**Profile: friends-only mini program.** A noncommercial trial-distributed dice game. Use the changed rule test or WeChat simulator/device flow. Keep room membership, server dice and hidden hands correct; preserve the trial distribution decision and authorization for cloud publishing. No production-scale compliance or anti-cheat program is implied.
+
+- The requested behavior/questions define completion. Reviews are read-only unless fixes are requested; report unrelated findings briefly without adding tasks or test backfill.
+- Use the smallest existing check that proves the change. Add tests for a concrete regression or consequential boundary; do not impose blanket TDD, new coverage targets, full suites, plans or reviewers. Preserve configured CI and actual release gates; reuse still-valid results.
+- Keep the existing structure. Internal contract errors should be clear; add retries, fallbacks or compatibility layers only for an observed external failure or supported contract. Keep secrets private and inspect security only at boundaries changed by this task.
 
 > 大话骰（Liar's Dice）的**微信小程序版**。web 版在 sibling repo `~/projects/side-projects/dahua-dice/`（Next.js + Vercel + Upstash，已上线 dahua-dice.vercel.app）。本 repo 当前状态：**已部署 + 体验版迭代中（2026-06-12，R3 玩家反馈 11 项全修）** —— room 云函数上线（全 action+stats+cleanup 自节流+懒建集合）、全 UI（在线对战 + 线下骰盅 solo + 战绩 + 分享进房 + dark/light）、68 测试绿。**剩余人肉**：mp 后台设体验版、qrcode 函数 IDE 首建、安全规则粘贴、真机双人验证 —— 见 plan WXAPP-7 状态块。
 
 ## Identity
 
-- **Path**: `~/projects/side-projects/dahua-dice-wxapp/`（与 web 版 pair 平级，见 `~/projects/CLAUDE.md` pair 约定）
+- **Path**: `~/projects/side-projects/dahua-dice-wxapp/`（与 web 版 pair 平级，见 `~/projects/AGENTS.md` pair 约定）
 - **定位**: friends-only 非商用，**体验版分发**（个人主体 15 体验成员 + 15 项目成员 ≈ 31 人）
 - **名称**: 闹麻大话骰（个人主体，类目：工具-备忘录）
 - **AppID**: `wx20a31f84ad3fc6fb`（2026-06-12 注册；AppSecret 已生成但**永不使用/存储**——云开发架构用不到）
